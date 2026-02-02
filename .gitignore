@@ -30,6 +30,8 @@ replay_pid*
 .kotlin
 .gradle
 
+/kotlin-js-store
+
 local.properties
 
 /build
