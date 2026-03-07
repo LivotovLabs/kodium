@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Kotlin Brand Gradients -->
+    <linearGradient id="kotlinGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E44857" />
+      <stop offset="46%" stop-color="#C711E1" />
+      <stop offset="100%" stop-color="#7F52FF" />
+    </linearGradient>
+    <linearGradient id="kotlinGradDark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7F52FF" />
+      <stop offset="100%" stop-color="#C711E1" />
+    </linearGradient>
+    
+    <!-- Shield Background Gradient -->
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1A1A24" />
+      <stop offset="100%" stop-color="#0D0D14" />
+    </linearGradient>
+
+    <!-- Outer Glow for the K -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Transparent or Dark Background (Optional, using transparent here for versatility) -->
+  <rect width="512" height="512" fill="transparent" />
+
+  <!-- Outer Cryptographic Shield -->
+  <path d="M256 40 
+           L80 100 
+           L80 250 
+           C80 370 160 450 256 480 
+           C352 450 432 370 432 250 
+           L432 100 
+           Z" 
+        fill="url(#shieldGrad)" 
+        stroke="url(#kotlinGrad)" 
+        stroke-width="12" 
+        stroke-linejoin="round" />
+
+  <!-- Inner Stylized Shield/Circuit Line -->
+  <path d="M256 65 
+           L104 118 
+           L104 250 
+           C104 352 172 420 256 445 
+           C340 420 408 352 408 250 
+           L408 118 
+           Z" 
+        fill="none" 
+        stroke="#FFFFFF" 
+        stroke-opacity="0.1" 
+        stroke-width="3" 
+        stroke-linejoin="round" />
+
+  <!-- Stylized 'K' functioning as a Cryptographic Key -->
+  <g transform="translate(132, 130)" filter="url(#glow)">
+    
+    <!-- Vertical Bar of the K -->
+    <path d="M60 40 L96 40 L96 210 L60 210 Z" fill="url(#kotlinGrad)" rx="8" />
+
+    <!-- Top Diagonal of the K -->
+    <path d="M85 125 L180 35 L215 65 L120 155 Z" fill="url(#kotlinGrad)" />
+
+    <!-- Bottom Diagonal of the K -->
+    <path d="M100 115 L215 185 L180 215 L65 145 Z" fill="url(#kotlinGradDark)" />
+
+    <!-- Connection Nodes / Key Bitting (representing Multiplatform & Crypto) -->
+    <circle cx="198" cy="50" r="14" fill="#FFFFFF" />
+    <circle cx="198" cy="200" r="14" fill="#FFFFFF" />
+    <circle cx="78" cy="125" r="10" fill="#FFFFFF" opacity="0.8"/>
+    
+    <!-- Subtle circuit lines extending from the nodes -->
+    <path d="M212 50 L240 50 L240 80" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-opacity="0.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M212 200 L240 200 L240 170" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-opacity="0.6" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

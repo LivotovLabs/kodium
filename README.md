@@ -5,6 +5,10 @@
 [![Kotlin](https://img.shields.io/badge/kotlin-2.3-blue.svg?logo=kotlin)](http://kotlinlang.org)
 [![Platform](https://img.shields.io/badge/platform-android%20|%20ios%20|%20jvm%20|%20js%20|%20linux%20|%20macos%20|%20mingw-7f52ff.svg)](http://kotlinlang.org)
 
+<p align="center">
+  <img src="logo.svg" width="256" alt="Kodium Logo">
+</p>
+
 **Secure. Portable. Pure Kotlin.**
 
 **Kodium** is a comprehensive, pure Kotlin Multiplatform (KMP) cryptography library. It acts as a faithful port of the renowned **TweetNaCl** C library, providing high-speed, high-security cryptographic primitives and advanced session management protocols without *any* native dependencies. 
