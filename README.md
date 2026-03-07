@@ -21,7 +21,6 @@ Write once, encrypt everywhere. Even in a post-quantum world.
 1. [Why Kodium?](#-why-kodium)
 2. [Supported Platforms](#-supported-platforms)
 3. [Features](#-features)
-   - [Examples & Deep Dives](#-examples--deep-dives)
 4. [Installation](#-installation)
 5. [Quick Start Guide](#-quick-start)
    - [Secure Messaging (Double Ratchet)](#1-secure-messaging-double-ratchet)
@@ -29,6 +28,7 @@ Write once, encrypt everywhere. Even in a post-quantum world.
    - [Asymmetric Encryption (Box)](#3-asymmetric-encryption-box)
    - [Symmetric Encryption (SecretBox)](#4-symmetric-encryption-secretbox)
    - [Key Export & Import](#5-key-export--import)
+6. [Examples and Deep Dives](#-examples--deep-dives)
 6. [Utilities](#-utilities)
    - [Base58 Encoding](#base58-encoding)
    - [Password-Based Key Derivation (PBKDF2)](#password-based-key-derivation-pbkdf2)
@@ -73,27 +73,6 @@ Write once, encrypt everywhere. Even in a post-quantum world.
 *   **Key Management:** Secure generation, import, and export of keys (Raw & Base58Check).
 *   **Utils:** Robust Base58Check encoding/decoding and HKDF (RFC 5869).
 
-### 📚 Examples & Deep Dives
-
-For advanced usage and detailed technical explanations, refer to our deep-dive standalone guides.
-
-#### 1. End-to-End Encrypted Chat (Double Ratchet)
-Learn how to build a fully secure, asynchronous peer-to-peer chat application using the classical Double Ratchet protocol. This guide covers the complete lifecycle:
-*   Account creation and public key publishing.
-*   Asynchronous X3DH handshake.
-*   Session initialization and secure message exchange.
-*   Advanced topics like Context Binding and Session State Persistence.
-
-👉 **[Read the full Double Ratchet & X3DH Guide](RATCHET.md)**
-
-#### 2. Post-Quantum Cryptography (PQC)
-Future-proof your application against "Harvest Now, Decrypt Later" attacks by upgrading to Kodium's Hybrid PQC suite. This guide covers:
-*   The theory behind mixing X25519 with FIPS 203 (ML-KEM-768).
-*   Managing and persisting large Hybrid Keys.
-*   Establishing a Post-Quantum Double Ratchet session for next-generation E2EE security.
-
-👉 **[Read the full PQC Reference Guide](PQC.md)**
-
 ---
 
 ## 📦 Installation
@@ -118,18 +97,6 @@ implementation 'eu.livotov.labs:kodium:1.0.0'
     <version>1.0.0</version>
 </dependency>
 ```
-
----
-
-## 🛠 Features
-
-*   **End-to-End Encryption:** Double Ratchet Algorithm & X3DH (Extended Triple Diffie-Hellman).
-*   **Post-Quantum Hybrid Encryption:** FIPS 203 (ML-KEM-768) + Curve25519 authenticated encryption.
-*   **Public-Key Cryptography (Box):** Authenticated encryption using Curve25519, XSalsa20, and Poly1305.
-*   **Secret-Key Cryptography (SecretBox):** Authenticated encryption using XSalsa20 and Poly1305.
-*   **Digital Signatures:** Ed25519 high-speed, high-security signatures.
-*   **Key Management:** Secure generation, import, and export of keys (Raw & Base58Check).
-*   **Utils:** Robust Base58Check encoding/decoding and HKDF (RFC 5869).
 
 ---
 
@@ -272,6 +239,29 @@ val derivedKey = KDF.deriveKey(
     keyLengthBytes = 32
 )
 ```
+
+---
+
+## 📚 Examples & Deep Dives
+
+For advanced usage and detailed technical explanations, refer to our deep-dive standalone guides.
+
+### 1. End-to-End Encrypted Chat (Double Ratchet)
+Learn how to build a fully secure, asynchronous peer-to-peer chat application using the classical Double Ratchet protocol. This guide covers the complete lifecycle:
+*   Account creation and public key publishing.
+*   Asynchronous X3DH handshake.
+*   Session initialization and secure message exchange.
+*   Advanced topics like Context Binding and Session State Persistence.
+
+👉 **[Read the full Double Ratchet & X3DH Guide](RATCHET.md)**
+
+### 2. Post-Quantum Cryptography (PQC)
+Future-proof your application against "Harvest Now, Decrypt Later" attacks by upgrading to Kodium's Hybrid PQC suite. This guide covers:
+*   The theory behind mixing X25519 with FIPS 203 (ML-KEM-768).
+*   Managing and persisting large Hybrid Keys.
+*   Establishing a Post-Quantum Double Ratchet session for next-generation E2EE security.
+
+👉 **[Read the full PQC Reference Guide](PQC.md)**
 
 ---
 
