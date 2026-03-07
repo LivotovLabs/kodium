@@ -11,9 +11,9 @@
 
 **Secure. Portable. Pure Kotlin.**
 
-**Kodium** is a comprehensive, pure Kotlin Multiplatform (KMP) cryptography library. It acts as a faithful port of the renowned **TweetNaCl** C library, providing high-speed, high-security cryptographic primitives and advanced session management protocols without *any* native dependencies. 
+**Kodium** is a comprehensive, pure Kotlin Multiplatform (KMP) cryptography library. It acts as a faithful port of the renowned **TweetNaCl** C library, providing high-speed, high-security cryptographic primitives, advanced **Double Ratchet** session management, and **Post-Quantum Cryptography (PQC)** protocols without *any* native dependencies. 
 
-Write once, encrypt everywhere.
+Write once, encrypt everywhere. Even in a post-quantum world.
 
 ---
 
