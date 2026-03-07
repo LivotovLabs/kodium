@@ -9,7 +9,22 @@ kotlin {
 
     androidTarget { publishLibraryVariants("release") }
     jvm()
-    js { browser() }
+    js {
+        browser {
+            testTask {
+                useKarma {
+                    useChromeHeadless()
+                }
+            }
+        }
+        nodejs {
+            testTask {
+                useMocha {
+                    timeout = "120000ms"
+                }
+            }
+        }
+    }
     wasmJs { browser() }
     iosX64()
     iosArm64()
@@ -22,6 +37,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(kotlincrypto.hash.sha2)
+            implementation(kotlincrypto.hash.sha3)
             implementation(kotlincrypto.macs.hmac.sha2)
             implementation(kotlincrypto.random.crypto.rand)
         }
