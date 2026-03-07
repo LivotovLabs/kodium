@@ -2,12 +2,12 @@
 
 [![Maven Central](https://img.shields.io/maven-central/v/eu.livotov.labs/kodium)](https://search.maven.org/artifact/eu.livotov.labs/kodium)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Kotlin](https://img.shields.io/badge/kotlin-2.0-blue.svg?logo=kotlin)](http://kotlinlang.org)
+[![Kotlin](https://img.shields.io/badge/kotlin-2.3-blue.svg?logo=kotlin)](http://kotlinlang.org)
 [![Platform](https://img.shields.io/badge/platform-android%20|%20ios%20|%20jvm%20|%20js%20|%20linux%20|%20macos%20|%20mingw-7f52ff.svg)](http://kotlinlang.org)
 
 **Secure. Portable. Pure Kotlin.**
 
-**Kodium** is a comprehensive, pure Kotlin Multiplatform (KMP) cryptography library. It acts as a faithful port of the renowned **TweetNaCl** C library, providing high-speed, high-security cryptographic primitives without *any* native dependencies.
+**Kodium** is a comprehensive, pure Kotlin Multiplatform (KMP) cryptography library. It acts as a faithful port of the renowned **TweetNaCl** C library, providing high-speed, high-security cryptographic primitives and advanced session management protocols without *any* native dependencies.
 
 Write once, encrypt everywhere.
 
@@ -17,16 +17,22 @@ Write once, encrypt everywhere.
 
 *   **Pure Kotlin:** No JNI, no C interop headaches, no complex build scripts for native binaries. Just pure Kotlin code running everywhere.
 *   **TweetNaCl Core:** Built on the solid foundation of the TweetNaCl crypto suite, known for its security and simplicity.
+*   **Double Ratchet:** Includes a full implementation of the Double Ratchet Algorithm and X3DH for secure End-to-End Encryption (E2EE).
 *   **Multiplatform Native:** First-class support for Android, iOS, JVM, JavaScript (Browser/Node), Wasm, Linux, macOS, and Windows.
 *   **Developer Friendly:** Simple, opinionated APIs for common tasks (Box, SecretBox, Signatures).
 
 ## 📝 Release Notes
 
+### v0.1.0
+*   Added **Double Ratchet Algorithm** and **X3DH** for End-to-End Encrypted messaging.
+*   Upgraded to **Kotlin 2.3.10**.
+*   Full KDoc documentation for all public APIs.
+*   Improved test coverage across JVM and JS targets.
+
 ### v0.0.1
 *   Initial implementation of the library.
 *   Port of TweetNaCl (Box, SecretBox, Signatures).
 *   Base58Check encoding/decoding.
-*   Minimal test coverage.
 
 ## 📦 Installation
 
@@ -34,12 +40,12 @@ Add Kodium to your common module's dependencies.
 
 **Gradle (Kotlin DSL)**
 ```kotlin
-implementation("eu.livotov.labs:kodium:0.0.1")
+implementation("eu.livotov.labs:kodium:0.1.0")
 ```
 
 **Gradle (Groovy)**
 ```groovy
-implementation 'eu.livotov.labs:kodium:0.0.1'
+implementation 'eu.livotov.labs:kodium:0.1.0'
 ```
 
 **Maven**
@@ -47,22 +53,40 @@ implementation 'eu.livotov.labs:kodium:0.0.1'
 <dependency>
     <groupId>eu.livotov.labs</groupId>
     <artifactId>kodium</artifactId>
-    <version>0.0.1</version>
+    <version>0.1.0</version>
 </dependency>
 ```
 
 ## 🛠 Features
 
+*   **End-to-End Encryption:** Double Ratchet Algorithm & X3DH (Extended Triple Diffie-Hellman).
 *   **Public-Key Cryptography (Box):** Authenticated encryption using Curve25519, XSalsa20, and Poly1305.
 *   **Secret-Key Cryptography (SecretBox):** Authenticated encryption using XSalsa20 and Poly1305.
 *   **Digital Signatures:** Ed25519 high-speed, high-security signatures.
 *   **Key Management:** Secure generation, import, and export of keys (Raw & Base58Check).
-*   **Utils:** Robust Base58Check encoding/decoding.
+*   **Utils:** Robust Base58Check encoding/decoding and HKDF (RFC 5869).
 
 ## 🚀 Quick Start
 
-### 1. Asymmetric Encryption (Box)
-Securely exchange messages between Alice and Bob.
+### 1. Secure Messaging (Double Ratchet)
+Kodium provides a complete implementation of the Double Ratchet algorithm for secure E2EE messaging.
+
+```kotlin
+// Alice initializes her session as the initiator
+val aliceSession = DoubleRatchetSession.initializeAsInitiator(sharedSecret, responderKey)
+
+// Encrypt a message to a Base58 string
+val encrypted = aliceSession.encryptToEncodedString("Hello Bob!".encodeToByteArray()).getOrThrow()
+
+// Bob decrypts it back
+val bobSession = DoubleRatchetSession.initializeAsResponder(sharedSecret, responderKeyPair)
+val decrypted = bobSession.decryptFromEncodedString(encrypted).getOrThrow()
+```
+
+👉 **See the full [Double Ratchet & X3DH Guide](RATCHET.md)** for a complete P2P chat application example.
+
+### 2. Asymmetric Encryption (Box)
+Securely exchange messages between Alice and Bob without session management.
 
 ```kotlin
 // 1. Generate keys
@@ -90,7 +114,7 @@ encryptedResult.onSuccess { cipherText ->
 }
 ```
 
-### 2. Symmetric Encryption (SecretBox)
+### 3. Symmetric Encryption (SecretBox)
 Protect data with a shared password/secret.
 
 ```kotlin
@@ -107,7 +131,7 @@ encryptedResult.onSuccess { cipherText ->
 }
 ```
 
-### 3. Key Export & Import
+### 4. Key Export & Import
 Easily store keys using Base58Check encoding.
 
 ```kotlin
