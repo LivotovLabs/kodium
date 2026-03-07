@@ -28,6 +28,11 @@ kotlin {
 
         commonTest.dependencies {
             implementation(kotlin("test"))
+            implementation(libs.kotest.assertions.core)
+            implementation(libs.kotest.property)
+            implementation(libs.kotest.framework.api)
+            implementation(libs.kotest.framework.engine)
+            implementation(libs.kotlinx.coroutines.test)
         }
 
     }
