@@ -105,17 +105,22 @@ object nacl {
         }
 
         /**
+         * Computes the shared secret between a public key and a private key.
+         */
+        fun beforenm(theirPublicKey: ByteArray, mySecretKey: ByteArray): ByteArray {
+            require(theirPublicKey.size == PublicKeySize) { "Invalid public key size" }
+            require(mySecretKey.size == SecretKeySize) { "Invalid secret key size" }
+            val k = ByteArray(SecretBox.KeySize)
+            NaClLowLevel.crypto_box_beforenm(k, theirPublicKey, mySecretKey)
+            return k
+        }
+
+        /**
          * The full box operation: Encrypts a message for a recipient.
          */
         fun seal(message: ByteArray, nonce: ByteArray, theirPublicKey: ByteArray, mySecretKey: ByteArray): ByteArray {
-            require(theirPublicKey.size == PublicKeySize) { "Invalid public key size" }
-            require(mySecretKey.size == SecretKeySize) { "Invalid secret key size" }
-
-            // 1. Compute the shared secret key `k`.
-            val k = ByteArray(SecretBox.KeySize)
-            NaClLowLevel.crypto_box_beforenm(k, theirPublicKey, mySecretKey)
-
-            // 2. Use the shared key to perform a standard secretBox seal.
+            // Use the exposed beforenm function
+            val k = beforenm(theirPublicKey, mySecretKey)
             return SecretBox.seal(message, nonce, k)
         }
 
@@ -123,14 +128,8 @@ object nacl {
          * The full open operation: Decrypts a message from a sender.
          */
         fun open(box: ByteArray, nonce: ByteArray, theirPublicKey: ByteArray, mySecretKey: ByteArray): ByteArray? {
-            require(theirPublicKey.size == PublicKeySize) { "Invalid public key size" }
-            require(mySecretKey.size == SecretKeySize) { "Invalid secret key size" }
-
-            // 1. Compute the same shared secret key `k`.
-            val k = ByteArray(SecretBox.KeySize)
-            NaClLowLevel.crypto_box_beforenm(k, theirPublicKey, mySecretKey)
-
-            // 2. Use the shared key to perform a standard secretBox open.
+            // Use the exposed beforenm function
+            val k = beforenm(theirPublicKey, mySecretKey)
             return SecretBox.open(box, nonce, k)
         }
     }

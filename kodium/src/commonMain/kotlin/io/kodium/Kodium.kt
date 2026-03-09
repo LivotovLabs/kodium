@@ -3,7 +3,9 @@ package io.kodium
 import io.kodium.core.KDF
 import io.kodium.core.decodeBase58WithChecksum
 import io.kodium.core.encodeToBase58WithChecksum
+import io.kodium.core.MLKEM
 import io.kodium.core.nacl
+import io.kodium.ratchet.HKDF
 
 /**
  * Kodium is a cryptographic utility object for key pair generation, encryption, and decryption.
@@ -14,8 +16,145 @@ import io.kodium.core.nacl
  */
 object Kodium {
 
-    private const val PBKDF2_ITERATIONS = 100_000 // A reasonable minimum. Increase for more security.
+    const val PBKDF2_ITERATIONS = 600_000 // A reasonable minimum. Increase for more security.
     private const val SALT_SIZE_BYTES = 16
+
+    /**
+     * Post-Quantum Cryptography (PQC) operations.
+     * This namespace provides hybrid cryptographic primitives that combine classical X25519
+     * with Post-Quantum ML-KEM (Kyber) to ensure security against both classical and future quantum computers.
+     */
+    object pqc {
+
+        /**
+         * Generates a hybrid post-quantum key pair.
+         *
+         * @return A KodiumPqcPrivateKey instance containing both classical and PQC keys.
+         */
+        fun generateKeyPair(): KodiumPqcPrivateKey {
+            return KodiumPqcPrivateKey.generate()
+        }
+
+        /**
+         * Encrypts data using a hybrid approach (X25519 + ML-KEM).
+         *
+         * **WARNING: Lack of Forward Secrecy.**
+         * This method uses static keys for encryption. If either the sender's or
+         * receiver's long-term key is compromised, all past messages encrypted between them can be
+         * decrypted. For continuous, secure communication with forward secrecy and break-in recovery,
+         * use [io.kodium.ratchet.PQDoubleRatchetSession] instead.
+         *
+         * @param mySecretKey The sender's hybrid private key.
+         * @param theirPublicKey The recipient's hybrid public key.
+         * @param data The data to be encrypted.
+         * @return A Result containing the encrypted data.
+         */
+        fun encrypt(
+            mySecretKey: KodiumPqcPrivateKey,
+            theirPublicKey: KodiumPqcPublicKey,
+            data: ByteArray
+        ): Result<ByteArray> {
+            return try {
+                val nonce = nacl.randomBytes(nacl.Box.NonceSize)
+
+                // 1. Perform ML-KEM encapsulation
+                val (sharedSecretPqc, kemCiphertext) = MLKEM.encapsulate(theirPublicKey.pqcPublicKey)
+
+                // 2. Compute classical shared secret
+                val sharedSecretClassical = nacl.Box.beforenm(
+                    theirPublicKey.classicalPublicKey,
+                    mySecretKey.classicalSecretKey
+                )
+
+                // 3. Mix secrets using HKDF
+                val mixedKey = HKDF.extract(salt = kemCiphertext, ikm = sharedSecretClassical + sharedSecretPqc)
+
+                // 4. Seal data using the mixed key
+                val box = nacl.SecretBox.seal(data, nonce, mixedKey)
+
+                Result.success(nonce + kemCiphertext + box)
+            } catch (err: Throwable) {
+                Result.failure(err)
+            }
+        }
+
+        /**
+         * Decrypts data using a hybrid approach (X25519 + ML-KEM).
+         *
+         * @param mySecretKey The recipient's hybrid private key.
+         * @param theirPublicKey The sender's hybrid public key.
+         * @param cipher The encrypted data.
+         * @return A Result containing the decrypted data.
+         */
+        fun decrypt(
+            mySecretKey: KodiumPqcPrivateKey,
+            theirPublicKey: KodiumPqcPublicKey,
+            cipher: ByteArray
+        ): Result<ByteArray> {
+            return try {
+                val minSize = nacl.Box.NonceSize + MLKEM.CiphertextSize + nacl.SecretBox.MacSize
+                if (cipher.size < minSize) {
+                    return Result.failure(Error("Invalid cipher size"))
+                }
+
+                val nonce = cipher.copyOfRange(0, nacl.Box.NonceSize)
+                val kemCiphertext = cipher.copyOfRange(nacl.Box.NonceSize, nacl.Box.NonceSize + MLKEM.CiphertextSize)
+                val box = cipher.copyOfRange(nacl.Box.NonceSize + MLKEM.CiphertextSize, cipher.size)
+
+                // 1. Perform ML-KEM decapsulation
+                val sharedSecretPqc = MLKEM.decapsulate(kemCiphertext, mySecretKey.pqcSecretKey)
+                    ?: return Result.failure(Error("ML-KEM decapsulation failed"))
+
+                // 2. Compute classical shared secret
+                val sharedSecretClassical = nacl.Box.beforenm(
+                    theirPublicKey.classicalPublicKey,
+                    mySecretKey.classicalSecretKey
+                )
+
+                // 3. Mix secrets using HKDF
+                val mixedKey = HKDF.extract(salt = kemCiphertext, ikm = sharedSecretClassical + sharedSecretPqc)
+
+                // 4. Open the box
+                val res = nacl.SecretBox.open(box, nonce, mixedKey)
+
+                if (res != null) {
+                    Result.success(res)
+                } else {
+                    Result.failure(Error("Failed to decrypt data, check your keys and try again"))
+                }
+            } catch (err: Throwable) {
+                Result.failure(err)
+            }
+        }
+
+        /**
+         * Encrypts the given data using hybrid PQC and encodes the result to a Base58 string with a checksum.
+         *
+         * **WARNING: Lack of Forward Secrecy.**
+         * This method uses static keys for encryption. If either the sender's or
+         * receiver's long-term key is compromised, all past messages encrypted between them can be
+         * decrypted. For continuous, secure communication with forward secrecy and break-in recovery,
+         * use [io.kodium.ratchet.PQDoubleRatchetSession] instead.
+         */
+        fun encryptToEncodedString(
+            mySecretKey: KodiumPqcPrivateKey,
+            theirPublicKey: KodiumPqcPublicKey,
+            data: ByteArray
+        ): Result<String> {
+            return encrypt(mySecretKey, theirPublicKey, data).mapCatching { it.encodeToBase58WithChecksum() }
+        }
+
+        /**
+         * Decrypts an encoded string using hybrid PQC.
+         */
+        fun decryptFromEncodedString(
+            mySecretKey: KodiumPqcPrivateKey,
+            theirPublicKey: KodiumPqcPublicKey,
+            data: String
+        ): Result<ByteArray> {
+            return decrypt(mySecretKey, theirPublicKey, data.decodeBase58WithChecksum())
+        }
+    }
 
     /**
      * Generates a cryptographic key pair consisting of a public and private key.
@@ -29,6 +168,12 @@ object Kodium {
     /**
      * Encrypts the given data using the sender's private key and the receiver's public key,
      * and then encodes the encrypted data to a Base58 string with a checksum.
+     *
+     * **WARNING: Lack of Forward Secrecy.**
+     * This method uses a static-static Diffie-Hellman key exchange. If either the sender's or
+     * receiver's long-term key is compromised, all past messages encrypted between them can be
+     * decrypted. For continuous, secure communication with forward secrecy and break-in recovery,
+     * use [io.kodium.ratchet.DoubleRatchetSession] instead.
      *
      * This method performs encryption by generating a combined nonce and cipher
      * from the data and keys provided, ensuring secure communication.
@@ -51,6 +196,12 @@ object Kodium {
      * Encrypts data using the sender's private key and the receiver's public key.
      * The encryption utilizes a secure combination of key pairs, a randomly generated nonce,
      * and the NaCl library for cryptographic operations.
+     *
+     * **WARNING: Lack of Forward Secrecy.**
+     * This method uses a static-static Diffie-Hellman key exchange. If either the sender's or
+     * receiver's long-term key is compromised, all past messages encrypted between them can be
+     * decrypted. For continuous, secure communication with forward secrecy and break-in recovery,
+     * use [io.kodium.ratchet.DoubleRatchetSession] instead.
      *
      * @param mySecretKey The private key of the sender, used to compute the shared secret for encryption.
      * @param theirPublicKey The public key of the receiver, used to compute the shared secret for encryption.
@@ -154,6 +305,12 @@ object Kodium {
     /**
      * Encrypts the given data using a symmetric encryption algorithm.
      *
+     * **Post-Quantum Security:** Symmetric encryption using 256-bit keys and XSalsa20
+     * (as implemented here) is considered resistant to attacks by future quantum computers.
+     * Unlike asymmetric algorithms, Grover's algorithm only provides a square-root speedup
+     * for symmetric key searches, effectively meaning a 256-bit key remains as secure
+     * against a quantum computer as a 128-bit key is against a classical computer today.
+     *
      * This method generates a unique nonce for every encryption process,
      * derives a cryptographic key using HMAC-SHA512, and encrypts the data
      * with the derived key and the nonce using a secret box encryption mechanism.
@@ -166,8 +323,8 @@ object Kodium {
     fun encryptSymmetric(password: String, data: ByteArray, keyDerivationIterations: Int = PBKDF2_ITERATIONS): Result<ByteArray> {
         return try {
             // 1. Check the min requirements for key derivation iterations
-            if (keyDerivationIterations < PBKDF2_ITERATIONS) {
-                return Result.failure(Error("The key derivation iterations must be at least $PBKDF2_ITERATIONS, but you provided $keyDerivationIterations"))
+            if (keyDerivationIterations < 1) {
+                return Result.failure(Error("The key derivation iterations must be at least 1, but you provided $keyDerivationIterations"))
             }
 
             // 2. Generate a new, random salt for every encryption
@@ -194,7 +351,6 @@ object Kodium {
             // 6. Return the combined output: [salt][nonce][box]
             Result.success(salt + nonce + box)
         } catch (err: Throwable) {
-            err.printStackTrace()
             Result.failure(err)
         }
     }
@@ -231,8 +387,8 @@ object Kodium {
     fun decryptSymmetric(password: String, cipher: ByteArray, keyDerivationIterations: Int = PBKDF2_ITERATIONS): Result<ByteArray> {
         return try {
             // 1. Check the min requirements for key derivation iterations
-            if (keyDerivationIterations < PBKDF2_ITERATIONS) {
-                return Result.failure(Error("The key derivation iterations must be at least $PBKDF2_ITERATIONS, but you provided $keyDerivationIterations"))
+            if (keyDerivationIterations < 1) {
+                return Result.failure(Error("The key derivation iterations must be at least 1, but you provided $keyDerivationIterations"))
             }
 
             // 2. Check if the cipher is large enough to contain salt, nonce, and MAC
@@ -388,8 +544,8 @@ class KodiumPrivateKey private constructor(val secretKey: ByteArray, val publicK
          * Imports a private key from an encrypted, Base58-encoded string.
          * A password MUST be provided.
          */
-        fun importFromEncryptedString(data: String, password: String): Result<KodiumPrivateKey> {
-            return Kodium.decryptSymmetric(password, data.decodeBase58WithChecksum())
+        fun importFromEncryptedString(data: String, password: String, keyDerivationIterations: Int = Kodium.PBKDF2_ITERATIONS): Result<KodiumPrivateKey> {
+            return Kodium.decryptSymmetric(password, data.decodeBase58WithChecksum(), keyDerivationIterations)
                 .mapCatching { rawSecretKey -> fromRaw(rawSecretKey) }
         }
     }
@@ -405,8 +561,8 @@ class KodiumPrivateKey private constructor(val secretKey: ByteArray, val publicK
      * Exports the private key to an encrypted, Base58-encoded string.
      * A password MUST be provided.
      */
-    fun exportToEncryptedString(password: String): Result<String> {
-        return Kodium.encryptSymmetric(password, this.secretKey)
+    fun exportToEncryptedString(password: String, keyDerivationIterations: Int = Kodium.PBKDF2_ITERATIONS): Result<String> {
+        return Kodium.encryptSymmetric(password, this.secretKey, keyDerivationIterations)
             .mapCatching { it.encodeToBase58WithChecksum() }
     }
 
@@ -420,5 +576,95 @@ class KodiumPrivateKey private constructor(val secretKey: ByteArray, val publicK
 
     override fun hashCode(): Int {
         return secretKey.contentHashCode()
+    }
+}
+
+/**
+ * Represents a Hybrid Post-Quantum Public Key.
+ */
+data class KodiumPqcPublicKey(val classicalPublicKey: ByteArray, val pqcPublicKey: ByteArray) {
+    companion object {
+        fun importFromEncodedString(data: String): Result<KodiumPqcPublicKey> {
+            return try {
+                val material = data.decodeBase58WithChecksum()
+                val classical = material.copyOfRange(0, nacl.Box.PublicKeySize)
+                val pqc = material.copyOfRange(nacl.Box.PublicKeySize, material.size)
+                Result.success(KodiumPqcPublicKey(classical, pqc))
+            } catch (err: Throwable) {
+                Result.failure(err)
+            }
+        }
+    }
+
+    fun exportToEncodedString(): String = (classicalPublicKey + pqcPublicKey).encodeToBase58WithChecksum()
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is KodiumPqcPublicKey) return false
+        return classicalPublicKey.contentEquals(other.classicalPublicKey) &&
+                pqcPublicKey.contentEquals(other.pqcPublicKey)
+    }
+
+    override fun hashCode(): Int {
+        var result = classicalPublicKey.contentHashCode()
+        result = 31 * result + pqcPublicKey.contentHashCode()
+        return result
+    }
+}
+
+/**
+ * Represents a Hybrid Post-Quantum Private Key.
+ */
+class KodiumPqcPrivateKey private constructor(
+    val classicalSecretKey: ByteArray,
+    val pqcSecretKey: ByteArray,
+    private val publicKeyInstance: KodiumPqcPublicKey
+) {
+    companion object {
+        fun generate(): KodiumPqcPrivateKey {
+            val (classicalPk, classicalSk) = nacl.Box.keyPair()
+            val (pqcPk, pqcSk) = MLKEM.keyPair()
+            return KodiumPqcPrivateKey(
+                classicalSk,
+                pqcSk,
+                KodiumPqcPublicKey(classicalPk, pqcPk)
+            )
+        }
+
+        fun importFromEncryptedString(data: String, password: String, keyDerivationIterations: Int = Kodium.PBKDF2_ITERATIONS): Result<KodiumPqcPrivateKey> {
+            return Kodium.decryptSymmetric(password, data.decodeBase58WithChecksum(), keyDerivationIterations).mapCatching { material ->
+                val classicalSk = material.copyOfRange(0, nacl.Box.SecretKeySize)
+                val pqcSk = material.copyOfRange(nacl.Box.SecretKeySize, material.size)
+
+                fromRaw(classicalSk, pqcSk)
+            }
+        }
+
+        internal fun fromRaw(classicalSk: ByteArray, pqcSk: ByteArray): KodiumPqcPrivateKey {
+            val (classicalPk, _) = nacl.Box.keyPairFromSecretKey(classicalSk)
+            val pqcPk = MLKEM.getPublicKeyFromSecretKey(pqcSk)
+            return KodiumPqcPrivateKey(classicalSk, pqcSk, KodiumPqcPublicKey(classicalPk, pqcPk))
+        }
+
+    }
+
+    fun getPublicKey(): KodiumPqcPublicKey = publicKeyInstance
+
+    fun exportToEncryptedString(password: String, keyDerivationIterations: Int = Kodium.PBKDF2_ITERATIONS): Result<String> {
+        return Kodium.encryptSymmetric(password, classicalSecretKey + pqcSecretKey, keyDerivationIterations)
+            .mapCatching { it.encodeToBase58WithChecksum() }
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is KodiumPqcPrivateKey) return false
+        return classicalSecretKey.contentEquals(other.classicalSecretKey) &&
+                pqcSecretKey.contentEquals(other.pqcSecretKey)
+    }
+
+    override fun hashCode(): Int {
+        var result = classicalSecretKey.contentHashCode()
+        result = 31 * result + pqcSecretKey.contentHashCode()
+        return result
     }
 }

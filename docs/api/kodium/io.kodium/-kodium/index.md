@@ -1,0 +1,38 @@
+//[kodium](../../../index.md)/[io.kodium](../index.md)/[Kodium](index.md)
+
+# Kodium
+
+[common]\
+object [Kodium](index.md)
+
+Kodium is a cryptographic utility object for key pair generation, encryption, and decryption. It supports both asymmetric and symmetric encryption methods, allowing for secure communication and data storage. Encoded data is managed using Base58 encoding with checksum for integrity verification.
+
+The object leverages NaCl for encryption backend and HMAC for password-based symmetric encryption.
+
+## Types
+
+| Name | Summary |
+|---|---|
+| [pqc](pqc/index.md) | [common]<br>object [pqc](pqc/index.md)<br>Post-Quantum Cryptography (PQC) operations. This namespace provides hybrid cryptographic primitives that combine classical X25519 with Post-Quantum ML-KEM (Kyber) to ensure security against both classical and future quantum computers. |
+
+## Properties
+
+| Name | Summary |
+|---|---|
+| [PBKDF2_ITERATIONS](-p-b-k-d-f2_-i-t-e-r-a-t-i-o-n-s.md) | [common]<br>const val [PBKDF2_ITERATIONS](-p-b-k-d-f2_-i-t-e-r-a-t-i-o-n-s.md): [Int](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-int/index.html) |
+
+## Functions
+
+| Name | Summary |
+|---|---|
+| [decodeArrayFromString](decode-array-from-string.md) | [common]<br>fun [decodeArrayFromString](decode-array-from-string.md)(data: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html)): &lt;Error class: unknown class&gt;&lt;[ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html)&gt;<br>Decodes a base58 encoded string with checksum into a byte array. |
+| [decrypt](decrypt.md) | [common]<br>fun [decrypt](decrypt.md)(mySecretKey: [KodiumPrivateKey](../-kodium-private-key/index.md), theirPublicKey: [KodiumPublicKey](../-kodium-public-key/index.md), cipher: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html)): &lt;Error class: unknown class&gt;&lt;[ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html)&gt;<br>Decrypts a cipher text using the receiver's private key and the sender's public key. |
+| [decryptFromEncodedString](decrypt-from-encoded-string.md) | [common]<br>fun [decryptFromEncodedString](decrypt-from-encoded-string.md)(mySecretKey: [KodiumPrivateKey](../-kodium-private-key/index.md), theirPublicKey: [KodiumPublicKey](../-kodium-public-key/index.md), data: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html)): &lt;Error class: unknown class&gt;&lt;[ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html)&gt;<br>Decrypts an encoded string using the recipient's private key and the sender's public key. |
+| [decryptSymmetric](decrypt-symmetric.md) | [common]<br>fun [decryptSymmetric](decrypt-symmetric.md)(password: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html), cipher: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html), keyDerivationIterations: [Int](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-int/index.html) = PBKDF2_ITERATIONS): &lt;Error class: unknown class&gt;&lt;[ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html)&gt;<br>Decrypts a byte array that was encrypted using symmetric encryption with a provided password. |
+| [decryptSymmetricFromEncodedString](decrypt-symmetric-from-encoded-string.md) | [common]<br>fun [decryptSymmetricFromEncodedString](decrypt-symmetric-from-encoded-string.md)(password: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html), data: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html), keyDerivationIterations: [Int](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-int/index.html) = PBKDF2_ITERATIONS): &lt;Error class: unknown class&gt;&lt;[ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html)&gt;<br>Decrypts an encoded Base58 string that was encrypted using symmetric encryption. |
+| [encodeArrayToString](encode-array-to-string.md) | [common]<br>fun [encodeArrayToString](encode-array-to-string.md)(data: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html)): &lt;Error class: unknown class&gt;&lt;[String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html)&gt;<br>Encodes the given byte array into a Base58 string, appending a checksum at the end. |
+| [encrypt](encrypt.md) | [common]<br>fun [encrypt](encrypt.md)(mySecretKey: [KodiumPrivateKey](../-kodium-private-key/index.md), theirPublicKey: [KodiumPublicKey](../-kodium-public-key/index.md), data: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html)): &lt;Error class: unknown class&gt;&lt;[ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html)&gt;<br>Encrypts data using the sender's private key and the receiver's public key. The encryption utilizes a secure combination of key pairs, a randomly generated nonce, and the NaCl library for cryptographic operations. |
+| [encryptSymmetric](encrypt-symmetric.md) | [common]<br>fun [encryptSymmetric](encrypt-symmetric.md)(password: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html), data: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html), keyDerivationIterations: [Int](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-int/index.html) = PBKDF2_ITERATIONS): &lt;Error class: unknown class&gt;&lt;[ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html)&gt;<br>Encrypts the given data using a symmetric encryption algorithm. |
+| [encryptSymmetricToEncodedString](encrypt-symmetric-to-encoded-string.md) | [common]<br>fun [encryptSymmetricToEncodedString](encrypt-symmetric-to-encoded-string.md)(password: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html), data: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html), keyDerivationIterations: [Int](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-int/index.html) = PBKDF2_ITERATIONS): &lt;Error class: unknown class&gt;&lt;[String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html)&gt;<br>Encrypts the given data using a symmetric encryption algorithm and encodes the result as a Base58 string with a checksum. |
+| [encryptToEncodedString](encrypt-to-encoded-string.md) | [common]<br>fun [encryptToEncodedString](encrypt-to-encoded-string.md)(mySecretKey: [KodiumPrivateKey](../-kodium-private-key/index.md), theirPublicKey: [KodiumPublicKey](../-kodium-public-key/index.md), data: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html)): &lt;Error class: unknown class&gt;&lt;[String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html)&gt;<br>Encrypts the given data using the sender's private key and the receiver's public key, and then encodes the encrypted data to a Base58 string with a checksum. |
+| [generateKeyPair](generate-key-pair.md) | [common]<br>fun [generateKeyPair](generate-key-pair.md)(): [KodiumPrivateKey](../-kodium-private-key/index.md)<br>Generates a cryptographic key pair consisting of a public and private key. |

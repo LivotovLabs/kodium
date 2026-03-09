@@ -2,14 +2,33 @@
 
 [![Maven Central](https://img.shields.io/maven-central/v/eu.livotov.labs/kodium)](https://search.maven.org/artifact/eu.livotov.labs/kodium)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Kotlin](https://img.shields.io/badge/kotlin-2.0-blue.svg?logo=kotlin)](http://kotlinlang.org)
+[![Kotlin](https://img.shields.io/badge/kotlin-2.3-blue.svg?logo=kotlin)](http://kotlinlang.org)
 [![Platform](https://img.shields.io/badge/platform-android%20|%20ios%20|%20jvm%20|%20js%20|%20linux%20|%20macos%20|%20mingw-7f52ff.svg)](http://kotlinlang.org)
+
+<p align="center">
+  <img src="logo.svg" width="256" alt="Kodium Logo">
+</p>
 
 **Secure. Portable. Pure Kotlin.**
 
-**Kodium** is a comprehensive, pure Kotlin Multiplatform (KMP) cryptography library. It acts as a faithful port of the renowned **TweetNaCl** C library, providing high-speed, high-security cryptographic primitives without *any* native dependencies.
+**Kodium** is a comprehensive, pure Kotlin Multiplatform (KMP) cryptography library. It acts as a faithful port of the renowned **TweetNaCl** C library, providing high-speed, high-security cryptographic primitives, advanced **Double Ratchet** session management, and **Post-Quantum Cryptography (PQC)** protocols without *any* native dependencies. 
 
-Write once, encrypt everywhere.
+Write once, encrypt everywhere. Even in a post-quantum world.
+
+---
+
+## 📑 Table of Contents
+1. [Why Kodium?](#-why-kodium)
+2. [Supported Platforms](#-supported-platforms)
+3. [Features](#-features)
+4. [Installation](#-installation)
+5. [Quick Start Guide](#-quick-start)
+6. [Documentation](#-documentation)
+7. [Examples and Deep Dives](#-examples--deep-dives)
+8. [Utilities](#-utilities)
+9. [Contributing](#-contributing)
+10. [Release Notes](#-release-notes)
+11. [License & Disclaimer](#-license)
 
 ---
 
@@ -17,16 +36,39 @@ Write once, encrypt everywhere.
 
 *   **Pure Kotlin:** No JNI, no C interop headaches, no complex build scripts for native binaries. Just pure Kotlin code running everywhere.
 *   **TweetNaCl Core:** Built on the solid foundation of the TweetNaCl crypto suite, known for its security and simplicity.
+*   **Post-Quantum Ready:** Hybrid cryptographic primitives combining classical X25519 with FIPS 203 (ML-KEM) to protect against future quantum computers. Note that symmetric encryption (SecretBox) is naturally quantum-resistant.
+*   **Double Ratchet:** Includes a full implementation of the Double Ratchet Algorithm and X3DH for secure End-to-End Encryption (E2EE), featuring a built-in LRU policy for skipped message keys to prevent memory exhaustion.
 *   **Multiplatform Native:** First-class support for Android, iOS, JVM, JavaScript (Browser/Node), Wasm, Linux, macOS, and Windows.
 *   **Developer Friendly:** Simple, opinionated APIs for common tasks (Box, SecretBox, Signatures).
 
-## 📝 Release Notes
+---
 
-### v0.0.1
-*   Initial implementation of the library.
-*   Port of TweetNaCl (Box, SecretBox, Signatures).
-*   Base58Check encoding/decoding.
-*   Minimal test coverage.
+## 🌍 Supported Platforms
+
+| Platform | Support |
+| :--- | :---: |
+| **Android** | ✅ |
+| **iOS** (Arm64, X64, Sim) | ✅ |
+| **JVM** (Java 17+) | ✅ |
+| **JavaScript** (Browser/Node) | ✅ |
+| **Wasm** (WebAssembly) | ✅ |
+| **macOS** (Arm64, X64) | ✅ |
+| **Linux** (X64) | ✅ |
+| **Windows** (MinGW X64) | ✅ |
+
+---
+
+## 🛠 Features
+
+*   **End-to-End Encryption:** Double Ratchet Algorithm & X3DH (Extended Triple Diffie-Hellman).
+*   **Post-Quantum Hybrid Encryption:** FIPS 203 (ML-KEM-768) + Curve25519 authenticated encryption.
+*   **Public-Key Cryptography (Box):** Authenticated encryption using Curve25519, XSalsa20, and Poly1305.
+*   **Secret-Key Cryptography (SecretBox):** Authenticated encryption using XSalsa20 and Poly1305.
+*   **Digital Signatures:** Ed25519 high-speed, high-security signatures.
+*   **Key Management:** Secure generation, import, and export of keys (Raw & Base58Check).
+*   **Utils:** Robust Base58Check encoding/decoding and HKDF (RFC 5869).
+
+---
 
 ## 📦 Installation
 
@@ -34,12 +76,12 @@ Add Kodium to your common module's dependencies.
 
 **Gradle (Kotlin DSL)**
 ```kotlin
-implementation("eu.livotov.labs:kodium:0.0.1")
+implementation("eu.livotov.labs:kodium:1.0.0")
 ```
 
 **Gradle (Groovy)**
 ```groovy
-implementation 'eu.livotov.labs:kodium:0.0.1'
+implementation 'eu.livotov.labs:kodium:1.0.0'
 ```
 
 **Maven**
@@ -47,22 +89,76 @@ implementation 'eu.livotov.labs:kodium:0.0.1'
 <dependency>
     <groupId>eu.livotov.labs</groupId>
     <artifactId>kodium</artifactId>
-    <version>0.0.1</version>
+    <version>1.0.0</version>
 </dependency>
 ```
 
-## 🛠 Features
-
-*   **Public-Key Cryptography (Box):** Authenticated encryption using Curve25519, XSalsa20, and Poly1305.
-*   **Secret-Key Cryptography (SecretBox):** Authenticated encryption using XSalsa20 and Poly1305.
-*   **Digital Signatures:** Ed25519 high-speed, high-security signatures.
-*   **Key Management:** Secure generation, import, and export of keys (Raw & Base58Check).
-*   **Utils:** Robust Base58Check encoding/decoding.
+---
 
 ## 🚀 Quick Start
 
-### 1. Asymmetric Encryption (Box)
-Securely exchange messages between Alice and Bob.
+### 1. Secure Messaging (Double Ratchet)
+Kodium provides a complete implementation of the Double Ratchet algorithm for secure E2EE messaging.
+
+```kotlin
+// Alice initializes her session as the initiator
+val aliceSession = DoubleRatchetSession.initializeAsInitiator(sharedSecret, responderRatchetKey)
+
+// Encrypt a message to a Base58 string
+val encrypted = aliceSession.encryptToEncodedString("Hello Bob!".encodeToByteArray()).getOrThrow()
+
+// Bob decrypts it back
+val bobSession = DoubleRatchetSession.initializeAsResponder(sharedSecret, responderRatchetKeyPair)
+val decrypted = bobSession.decryptFromEncodedString(encrypted).getOrThrow()
+```
+
+### 2. Post-Quantum Secure Messaging (PQ Double Ratchet)
+Upgrade your E2EE sessions to be resistant to quantum computer attacks using the `PQDoubleRatchetSession`.
+
+```kotlin
+// Alice initializes her PQ session using the secrets from PQXDH
+val aliceSession = PQDoubleRatchetSession.initializeAsInitiator(
+    sharedSecret = aliceSharedSecret.masterSecret,
+    responderPqcPublicKey = fetchedBobBundle.pqcKey,
+    ourPqcPrivateKey = aliceHybridKeys
+)
+
+val encrypted = aliceSession.encryptToEncodedString("Post-Quantum Hello!".encodeToByteArray()).getOrThrow()
+
+// Bob initializes his session using his keys and Alice's provided payload
+val bobSession = PQDoubleRatchetSession.initializeAsResponder(
+    sharedSecret = bobSharedSecret,
+    ourPqcPrivateKey = bobHybridKeys,
+    initiatorPqcPublicKey = fetchedAlicePayload.pqcPublicKey!!
+)
+val decrypted = bobSession.decryptFromEncodedString(encrypted).getOrThrow()
+```
+
+### 2. Post-Quantum Encryption (Hybrid PQC)
+Protect your data against future quantum computer attacks using the hybrid `Kodium.pqc` suite.
+
+```kotlin
+// 1. Generate Hybrid Keys (X25519 + ML-KEM-768)
+val myKeys = Kodium.pqc.generateKeyPair()
+val theirPublicKey = ... // Received from peer
+
+// 2. Encrypt
+val encrypted = Kodium.pqc.encryptToEncodedString(
+    mySecretKey = myKeys,
+    theirPublicKey = theirPublicKey,
+    data = "Secret message".encodeToByteArray()
+).getOrThrow()
+
+// 3. Decrypt
+val decrypted = Kodium.pqc.decryptFromEncodedString(
+    mySecretKey = myKeys,
+    theirPublicKey = theirPublicKey,
+    data = encrypted
+).getOrThrow()
+```
+
+### 3. Asymmetric Encryption (Box)
+Securely exchange messages between Alice and Bob without session management.
 
 ```kotlin
 // 1. Generate keys
@@ -90,7 +186,7 @@ encryptedResult.onSuccess { cipherText ->
 }
 ```
 
-### 2. Symmetric Encryption (SecretBox)
+### 4. Symmetric Encryption (SecretBox)
 Protect data with a shared password/secret.
 
 ```kotlin
@@ -107,7 +203,7 @@ encryptedResult.onSuccess { cipherText ->
 }
 ```
 
-### 3. Key Export & Import
+### 5. Key Export & Import
 Easily store keys using Base58Check encoding.
 
 ```kotlin
@@ -125,6 +221,17 @@ val restoredKeyPair = KodiumPrivateKey.importFromEncryptedString(
     password = "StrongPassword"
 )
 ```
+
+---
+
+## 📖 Documentation
+
+The complete documentation for Kodium is available in the [docs/](docs/README.md) directory, which is structured for GitBook.
+
+*   [**Manual**](docs/README.md): High-level guides, architectural overviews, and usage examples.
+*   [**API Reference**](docs/api/index.md): Detailed documentation for every package, class, and function, generated from KDocs.
+
+---
 
 ## 🛠 Utilities
 
@@ -159,22 +266,60 @@ val derivedKey = KDF.deriveKey(
 )
 ```
 
-## 🌍 Supported Platforms
+---
 
-| Platform | Support |
-| :--- | :---: |
-| **Android** | ✅ |
-| **iOS** (Arm64, X64, Sim) | ✅ |
-| **JVM** (Java 17+) | ✅ |
-| **JavaScript** (Browser/Node) | ✅ |
-| **Wasm** (WebAssembly) | ✅ |
-| **macOS** (Arm64, X64) | ✅ |
-| **Linux** (X64) | ✅ |
-| **Windows** (MinGW X64) | ✅ |
+## 📚 Examples & Deep Dives
+
+For advanced usage and detailed technical explanations, refer to our deep-dive standalone guides.
+
+### 1. End-to-End Encrypted Chat (Double Ratchet)
+Learn how to build a fully secure, asynchronous peer-to-peer chat application using the classical Double Ratchet protocol. This guide covers the complete lifecycle:
+*   Account creation and public key publishing.
+*   Asynchronous X3DH handshake.
+*   Session initialization and secure message exchange.
+*   Advanced topics like Context Binding and Session State Persistence.
+
+👉 **[Read the full Double Ratchet & X3DH Guide](RATCHET.md)**
+
+### 2. Post-Quantum Cryptography (PQC)
+Future-proof your application against "Harvest Now, Decrypt Later" attacks by upgrading to Kodium's Hybrid PQC suite. This guide covers:
+*   The theory behind mixing X25519 with FIPS 203 (ML-KEM-768).
+*   Managing and persisting large Hybrid Keys.
+*   Establishing a Post-Quantum Double Ratchet session for next-generation E2EE security.
+
+👉 **[Read the full PQC Reference Guide](PQC.md)**
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! If you're interested in building Kodium from source, running tests, or updating the documentation, please refer to our [Developer Guide](DEVELOPER.md).
+
+---
+
+## 📝 Release Notes
+
+### v1.0.0
+*   **Post-Quantum Cryptography:** Added `Kodium.pqc` namespace with support for Hybrid ML-KEM-768 + X25519 encryption.
+*   **FIPS 203 Compliance:** Integrated a pure Kotlin implementation of the ML-KEM (Kyber) standard.
+*   **Double Ratchet Algorithm:** Full implementation of the Signal-style Double Ratchet and X3DH protocols for secure End-to-End Encrypted messaging.
+*   **Expanded HKDF:** Updated secret mixing to support high-entropy hybrid keys.
+*   Upgraded to **Kotlin 2.3.10**.
+*   Full KDoc documentation for all public APIs.
+*   Improved test coverage across JVM and JS targets.
+
+### v0.0.1
+*   Initial implementation of the library.
+*   Port of TweetNaCl (Box, SecretBox, Signatures).
+*   Base58Check encoding/decoding.
+
+---
 
 ## ⚖️ License
 
 Kodium is licensed under the [Apache 2.0 License](LICENSE).
+
+The Post-Quantum ML-KEM math implementation in this project is based on the excellent [KyberKotlin](https://github.com/ronhombre/KyberKotlin) project by Ron Lauren Hombre.
 
 ```text
 Copyright 2026 Livotov Labs Ltd.

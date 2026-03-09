@@ -174,10 +174,15 @@ fun String.decodeBase58WithChecksum(): ByteArray {
     val hash = payload.sha256().sha256()
     val computedChecksum = hash.copyOfRange(0, CHECKSUM_SIZE)
 
-    if (checksum.contentEquals(computedChecksum)) {
+    var match = 0
+    for (i in checksum.indices) {
+        match = match or (checksum[i].toInt() xor computedChecksum[i].toInt())
+    }
+
+    if (match == 0) {
         return payload
     } else {
-        throw IllegalArgumentException("Checksum mismatch: $checksum is not computed checksum $computedChecksum")
+        throw IllegalArgumentException("Checksum mismatch")
     }
 }
 

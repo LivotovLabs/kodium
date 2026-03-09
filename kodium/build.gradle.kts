@@ -1,4 +1,5 @@
 plugins {
+    id("org.jetbrains.dokka") version "1.9.20"
     alias(libs.plugins.multiplatform)
     alias(libs.plugins.android.library)
     alias(libs.plugins.maven.publish)
@@ -9,7 +10,23 @@ kotlin {
 
     androidTarget { publishLibraryVariants("release") }
     jvm()
-    js { browser() }
+    js {
+        browser {
+            testTask {
+                useKarma {
+                    useChromeHeadless()
+                }
+            }
+        }
+        nodejs {
+            testTask {
+                useMocha {
+                    timeout = "600000ms"
+                }
+            }
+        }
+    }
+    @OptIn(org.jetbrains.kotlin.gradle.ExperimentalWasmDsl::class)
     wasmJs { browser() }
     iosX64()
     iosArm64()
@@ -22,12 +39,18 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(kotlincrypto.hash.sha2)
+            implementation(kotlincrypto.hash.sha3)
             implementation(kotlincrypto.macs.hmac.sha2)
             implementation(kotlincrypto.random.crypto.rand)
         }
 
         commonTest.dependencies {
             implementation(kotlin("test"))
+            implementation(libs.kotest.assertions.core)
+            implementation(libs.kotest.property)
+            implementation(libs.kotest.framework.api)
+            implementation(libs.kotest.framework.engine)
+            implementation(libs.kotlinx.coroutines.test)
         }
 
     }

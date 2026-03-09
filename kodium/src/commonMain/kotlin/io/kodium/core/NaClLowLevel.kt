@@ -54,6 +54,7 @@ internal object NaClLowLevel {
     }
 
     private fun randombytes(x: ByteArray, size: Int) {
+        require(x.size >= size) { "Buffer too small" }
         // We want to fill only the first `size` bytes of array `x`.
         // If x.size == size, we can fill it directly.
         if (x.size == size) {
