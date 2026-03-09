@@ -299,7 +299,7 @@ We welcome contributions! If you're interested in building Kodium from source, r
 
 ## 📝 Release Notes
 
-### v1.0.0
+### v1.0.0-alpha-1  
 *   **Post-Quantum Cryptography:** Added `Kodium.pqc` namespace with support for Hybrid ML-KEM-768 + X25519 encryption.
 *   **FIPS 203 Compliance:** Integrated a pure Kotlin implementation of the ML-KEM (Kyber) standard.
 *   **Double Ratchet Algorithm:** Full implementation of the Signal-style Double Ratchet and X3DH protocols for secure End-to-End Encrypted messaging.
