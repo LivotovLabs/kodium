@@ -13,13 +13,13 @@ class KryptokitTest {
         val password = "qwerty"
         val badPassword = "Qwerty"
         val keypair = Kodium.generateKeyPair()
-        val exportedKeyPairString = keypair.exportToEncryptedString(password).getOrNull() ?: ""
+        val exportedKeyPairString = keypair.exportToEncryptedString(password, 1).getOrNull() ?: ""
 
         val restoreResultWithCorrectPassword =
-            KodiumPrivateKey.importFromEncryptedString(exportedKeyPairString, password).getOrNull()
+            KodiumPrivateKey.importFromEncryptedString(exportedKeyPairString, password, 1).getOrNull()
         val restoreResultWithBadPassword =
-            KodiumPrivateKey.importFromEncryptedString(exportedKeyPairString, badPassword)
-        val restoreResultWithEmptyPassword = KodiumPrivateKey.importFromEncryptedString(exportedKeyPairString, "")
+            KodiumPrivateKey.importFromEncryptedString(exportedKeyPairString, badPassword, 1)
+        val restoreResultWithEmptyPassword = KodiumPrivateKey.importFromEncryptedString(exportedKeyPairString, "", 1)
 
         assertContentEquals(
             expected = keypair.secretKey,
@@ -100,7 +100,7 @@ class KryptokitTest {
         val derivations = 1_000_000
         val data = "Hello, World Symmetric!".encodeToByteArray()
         val encrypted = Kodium.encryptSymmetricToEncodedString(password, data, derivations).getOrNull()
-        val encryptedWithTooSmallKeyDerivations = Kodium.encryptSymmetricToEncodedString(password, data, 1000).getOrNull()
+        val encryptedWithTooSmallKeyDerivations = Kodium.encryptSymmetricToEncodedString(password, data, 0).getOrNull()
         val decrypted = Kodium.decryptSymmetricFromEncodedString(password, encrypted!!, derivations).getOrNull()
         val decryptedWithDifferentKeyDerivations = Kodium.decryptSymmetricFromEncodedString(password, encrypted, derivations+100).getOrNull()
 

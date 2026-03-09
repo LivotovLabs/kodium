@@ -107,13 +107,35 @@ Kodium provides a complete implementation of the Double Ratchet algorithm for se
 
 ```kotlin
 // Alice initializes her session as the initiator
-val aliceSession = DoubleRatchetSession.initializeAsInitiator(sharedSecret, responderKey)
+val aliceSession = DoubleRatchetSession.initializeAsInitiator(sharedSecret, responderRatchetKey)
 
 // Encrypt a message to a Base58 string
 val encrypted = aliceSession.encryptToEncodedString("Hello Bob!".encodeToByteArray()).getOrThrow()
 
 // Bob decrypts it back
-val bobSession = DoubleRatchetSession.initializeAsResponder(sharedSecret, responderKeyPair)
+val bobSession = DoubleRatchetSession.initializeAsResponder(sharedSecret, responderRatchetKeyPair)
+val decrypted = bobSession.decryptFromEncodedString(encrypted).getOrThrow()
+```
+
+### 2. Post-Quantum Secure Messaging (PQ Double Ratchet)
+Upgrade your E2EE sessions to be resistant to quantum computer attacks using the `PQDoubleRatchetSession`.
+
+```kotlin
+// Alice initializes her PQ session using the secrets from PQXDH
+val aliceSession = PQDoubleRatchetSession.initializeAsInitiator(
+    sharedSecret = aliceSharedSecret.masterSecret,
+    responderPqcPublicKey = fetchedBobBundle.pqcKey,
+    ourPqcPrivateKey = aliceHybridKeys
+)
+
+val encrypted = aliceSession.encryptToEncodedString("Post-Quantum Hello!".encodeToByteArray()).getOrThrow()
+
+// Bob initializes his session using his keys and Alice's provided payload
+val bobSession = PQDoubleRatchetSession.initializeAsResponder(
+    sharedSecret = bobSharedSecret,
+    ourPqcPrivateKey = bobHybridKeys,
+    initiatorPqcPublicKey = fetchedAlicePayload.pqcPublicKey!!
+)
 val decrypted = bobSession.decryptFromEncodedString(encrypted).getOrThrow()
 ```
 

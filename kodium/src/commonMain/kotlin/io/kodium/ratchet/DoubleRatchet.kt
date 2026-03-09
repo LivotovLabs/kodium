@@ -216,8 +216,8 @@ class DoubleRatchetSession private constructor(
          * @param password The secret password used to encrypt the session state during export.
          * @return A `Result` containing the restored [DoubleRatchetSession], or an error if decryption/parsing fails.
          */
-        fun importFromEncryptedString(data: String, password: String): Result<DoubleRatchetSession> {
-            return io.kodium.Kodium.decryptSymmetricFromEncodedString(password, data).mapCatching { bytes ->
+        fun importFromEncryptedString(data: String, password: String, keyDerivationIterations: Int = io.kodium.Kodium.PBKDF2_ITERATIONS): Result<DoubleRatchetSession> {
+            return io.kodium.Kodium.decryptSymmetricFromEncodedString(password, data, keyDerivationIterations).mapCatching { bytes ->
                 val reader = ByteReader(bytes)
                 
                 val dhs = KodiumPrivateKey.fromRaw(reader.readBytes(32))
@@ -275,7 +275,7 @@ class DoubleRatchetSession private constructor(
      * @param password A strong, secret password to encrypt the exported state.
      * @return A `Result` containing the Base58-encoded string on success.
      */
-    fun exportToEncryptedString(password: String): Result<String> {
+    fun exportToEncryptedString(password: String, keyDerivationIterations: Int = io.kodium.Kodium.PBKDF2_ITERATIONS): Result<String> {
         return try {
             val writer = ByteWriter()
             writer.write(DHs.secretKey)
@@ -318,7 +318,7 @@ class DoubleRatchetSession private constructor(
             writer.writeInt(applicationInfo.size)
             writer.write(applicationInfo)
             
-            io.kodium.Kodium.encryptSymmetricToEncodedString(password, writer.toByteArray())
+            io.kodium.Kodium.encryptSymmetricToEncodedString(password, writer.toByteArray(), keyDerivationIterations)
         } catch (e: Exception) {
             Result.failure(e)
         }

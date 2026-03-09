@@ -17,7 +17,7 @@ object MLKEM {
     private val mlkem = MLKEM_768()
 
     /**
-     * Generates a key pair matching ML-KEM-768 dimensions.
+     * Generates a key pair matching ML-KEM-768 dimensions using a CSPRNG.
      */
     fun keyPair(): Pair<ByteArray, ByteArray> {
         val kp = mlkem.generate()
@@ -26,6 +26,7 @@ object MLKEM {
 
     /**
      * Encapsulates a shared secret using the recipient's public key.
+     * Uses a CSPRNG for entropy.
      */
     fun encapsulate(publicKey: ByteArray): Pair<ByteArray, ByteArray> {
         require(publicKey.size == PublicKeySize) { "Invalid public key size" }

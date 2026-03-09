@@ -234,8 +234,19 @@ internal object KyberAgreement {
         recoveredPlainText.fill(0)
         decapsHash.fill(0)
 
-        if(!kyberCipherText.fullBytes.contentEquals(regeneratedCipherText.fullBytes))
-            secretKeyCandidate = secretKeyRejection //Implicit Rejection
+        var d = 0
+        val ct1 = kyberCipherText.fullBytes
+        val ct2 = regeneratedCipherText.fullBytes
+        for (i in ct1.indices) {
+            d = d or (ct1[i].toInt() xor ct2[i].toInt())
+        }
+        val mask = -((d or -d) ushr 31)
+
+        for (i in secretKeyCandidate.indices) {
+            val valid = secretKeyCandidate[i].toInt()
+            val reject = secretKeyRejection[i].toInt()
+            secretKeyCandidate[i] = (valid xor (mask and (valid xor reject))).toByte()
+        }
 
         return secretKeyCandidate
     }

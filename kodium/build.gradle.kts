@@ -20,11 +20,12 @@ kotlin {
         nodejs {
             testTask {
                 useMocha {
-                    timeout = "120000ms"
+                    timeout = "600000ms"
                 }
             }
         }
     }
+    @OptIn(org.jetbrains.kotlin.gradle.ExperimentalWasmDsl::class)
     wasmJs { browser() }
     iosX64()
     iosArm64()

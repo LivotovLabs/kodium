@@ -16,7 +16,7 @@ import io.kodium.ratchet.HKDF
  */
 object Kodium {
 
-    private const val PBKDF2_ITERATIONS = 100_000 // A reasonable minimum. Increase for more security.
+    const val PBKDF2_ITERATIONS = 600_000 // A reasonable minimum. Increase for more security.
     private const val SALT_SIZE_BYTES = 16
 
     /**
@@ -157,6 +157,12 @@ object Kodium {
      * Encrypts the given data using the sender's private key and the receiver's public key,
      * and then encodes the encrypted data to a Base58 string with a checksum.
      *
+     * **WARNING: Lack of Forward Secrecy.**
+     * This method uses a static-static Diffie-Hellman key exchange. If either the sender's or
+     * receiver's long-term key is compromised, all past messages encrypted between them can be
+     * decrypted. For continuous, secure communication with forward secrecy and break-in recovery,
+     * use [io.kodium.ratchet.DoubleRatchetSession] instead.
+     *
      * This method performs encryption by generating a combined nonce and cipher
      * from the data and keys provided, ensuring secure communication.
      * The output is a Base58-encoded string for easy transmission and integrity verification.
@@ -178,6 +184,12 @@ object Kodium {
      * Encrypts data using the sender's private key and the receiver's public key.
      * The encryption utilizes a secure combination of key pairs, a randomly generated nonce,
      * and the NaCl library for cryptographic operations.
+     *
+     * **WARNING: Lack of Forward Secrecy.**
+     * This method uses a static-static Diffie-Hellman key exchange. If either the sender's or
+     * receiver's long-term key is compromised, all past messages encrypted between them can be
+     * decrypted. For continuous, secure communication with forward secrecy and break-in recovery,
+     * use [io.kodium.ratchet.DoubleRatchetSession] instead.
      *
      * @param mySecretKey The private key of the sender, used to compute the shared secret for encryption.
      * @param theirPublicKey The public key of the receiver, used to compute the shared secret for encryption.
@@ -293,8 +305,8 @@ object Kodium {
     fun encryptSymmetric(password: String, data: ByteArray, keyDerivationIterations: Int = PBKDF2_ITERATIONS): Result<ByteArray> {
         return try {
             // 1. Check the min requirements for key derivation iterations
-            if (keyDerivationIterations < PBKDF2_ITERATIONS) {
-                return Result.failure(Error("The key derivation iterations must be at least $PBKDF2_ITERATIONS, but you provided $keyDerivationIterations"))
+            if (keyDerivationIterations < 1) {
+                return Result.failure(Error("The key derivation iterations must be at least 1, but you provided $keyDerivationIterations"))
             }
 
             // 2. Generate a new, random salt for every encryption
@@ -358,8 +370,8 @@ object Kodium {
     fun decryptSymmetric(password: String, cipher: ByteArray, keyDerivationIterations: Int = PBKDF2_ITERATIONS): Result<ByteArray> {
         return try {
             // 1. Check the min requirements for key derivation iterations
-            if (keyDerivationIterations < PBKDF2_ITERATIONS) {
-                return Result.failure(Error("The key derivation iterations must be at least $PBKDF2_ITERATIONS, but you provided $keyDerivationIterations"))
+            if (keyDerivationIterations < 1) {
+                return Result.failure(Error("The key derivation iterations must be at least 1, but you provided $keyDerivationIterations"))
             }
 
             // 2. Check if the cipher is large enough to contain salt, nonce, and MAC
@@ -515,8 +527,8 @@ class KodiumPrivateKey private constructor(val secretKey: ByteArray, val publicK
          * Imports a private key from an encrypted, Base58-encoded string.
          * A password MUST be provided.
          */
-        fun importFromEncryptedString(data: String, password: String): Result<KodiumPrivateKey> {
-            return Kodium.decryptSymmetric(password, data.decodeBase58WithChecksum())
+        fun importFromEncryptedString(data: String, password: String, keyDerivationIterations: Int = Kodium.PBKDF2_ITERATIONS): Result<KodiumPrivateKey> {
+            return Kodium.decryptSymmetric(password, data.decodeBase58WithChecksum(), keyDerivationIterations)
                 .mapCatching { rawSecretKey -> fromRaw(rawSecretKey) }
         }
     }
@@ -532,8 +544,8 @@ class KodiumPrivateKey private constructor(val secretKey: ByteArray, val publicK
      * Exports the private key to an encrypted, Base58-encoded string.
      * A password MUST be provided.
      */
-    fun exportToEncryptedString(password: String): Result<String> {
-        return Kodium.encryptSymmetric(password, this.secretKey)
+    fun exportToEncryptedString(password: String, keyDerivationIterations: Int = Kodium.PBKDF2_ITERATIONS): Result<String> {
+        return Kodium.encryptSymmetric(password, this.secretKey, keyDerivationIterations)
             .mapCatching { it.encodeToBase58WithChecksum() }
     }
 
@@ -602,23 +614,27 @@ class KodiumPqcPrivateKey private constructor(
             )
         }
 
-        fun importFromEncryptedString(data: String, password: String): Result<KodiumPqcPrivateKey> {
-            return Kodium.decryptSymmetric(password, data.decodeBase58WithChecksum()).mapCatching { material ->
+        fun importFromEncryptedString(data: String, password: String, keyDerivationIterations: Int = Kodium.PBKDF2_ITERATIONS): Result<KodiumPqcPrivateKey> {
+            return Kodium.decryptSymmetric(password, data.decodeBase58WithChecksum(), keyDerivationIterations).mapCatching { material ->
                 val classicalSk = material.copyOfRange(0, nacl.Box.SecretKeySize)
                 val pqcSk = material.copyOfRange(nacl.Box.SecretKeySize, material.size)
-                
-                val (classicalPk, _) = nacl.Box.keyPairFromSecretKey(classicalSk)
-                val pqcPk = MLKEM.getPublicKeyFromSecretKey(pqcSk)
-                
-                KodiumPqcPrivateKey(classicalSk, pqcSk, KodiumPqcPublicKey(classicalPk, pqcPk))
+
+                fromRaw(classicalSk, pqcSk)
             }
         }
+
+        internal fun fromRaw(classicalSk: ByteArray, pqcSk: ByteArray): KodiumPqcPrivateKey {
+            val (classicalPk, _) = nacl.Box.keyPairFromSecretKey(classicalSk)
+            val pqcPk = MLKEM.getPublicKeyFromSecretKey(pqcSk)
+            return KodiumPqcPrivateKey(classicalSk, pqcSk, KodiumPqcPublicKey(classicalPk, pqcPk))
+        }
+
     }
 
     fun getPublicKey(): KodiumPqcPublicKey = publicKeyInstance
 
-    fun exportToEncryptedString(password: String): Result<String> {
-        return Kodium.encryptSymmetric(password, classicalSecretKey + pqcSecretKey)
+    fun exportToEncryptedString(password: String, keyDerivationIterations: Int = Kodium.PBKDF2_ITERATIONS): Result<String> {
+        return Kodium.encryptSymmetric(password, classicalSecretKey + pqcSecretKey, keyDerivationIterations)
             .mapCatching { it.encodeToBase58WithChecksum() }
     }
 

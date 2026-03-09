@@ -79,15 +79,13 @@ val decrypted: ByteArray = Kodium.pqc.decrypt(
 
 ---
 
-## 🔄 Double Ratchet & X3DH Integration
+## 🔄 Double Ratchet & PQXDH Integration
 
-*Note: The Post-Quantum upgrade for the Double Ratchet protocol is currently in the API design phase. The following illustrates the planned usage for establishing a quantum-resistant E2EE session.*
-
-The Double Ratchet algorithm in Kodium is being upgraded to support a **Post-Quantum Cryptographic Suite**. This allows you to establish end-to-end encrypted sessions that are resistant to "Harvest Now, Decrypt Later" attacks.
+The Double Ratchet algorithm in Kodium has been fully upgraded to support a **Post-Quantum Cryptographic Suite**. This allows you to establish end-to-end encrypted sessions that are resistant to "Harvest Now, Decrypt Later" attacks.
 
 ### Example: P2P Secure Chat (Post-Quantum)
 
-This example demonstrates how Alice and Bob can securely exchange messages using the planned PQC Double Ratchet implementation across the typical phases of an E2EE chat application.
+This example demonstrates how Alice and Bob can securely exchange messages using the `PQDoubleRatchetSession` across the typical phases of an E2EE chat application.
 
 #### Phase 1: Account Creation & Key Publishing
 
@@ -135,13 +133,14 @@ val aliceSharedSecret = PQXDH.calculateSecretAsInitiator(
     responderBundle = fetchedBobBundle
 )
 
-import io.kodium.ratchet.DoubleRatchetSession
+import io.kodium.ratchet.PQDoubleRatchetSession
 
 // Alice initializes her PQC-enabled Double Ratchet session.
-// Note: She provides Bob's KodiumPqcPublicKey instead of a classical key.
-val aliceSession = DoubleRatchetSession.initializeAsInitiator(
+// Note: She provides Bob's KodiumPqcPublicKey and her own Private Key.
+val aliceSession = PQDoubleRatchetSession.initializeAsInitiator(
     sharedSecret = aliceSharedSecret.masterSecret,
-    responderPublicKey = fetchedBobBundle.pqcKey
+    responderPqcPublicKey = fetchedBobBundle.pqcKey,
+    ourPqcPrivateKey = aliceHybridKeys
 )
 
 // Alice encrypts her first message.
@@ -150,8 +149,9 @@ val aliceSession = DoubleRatchetSession.initializeAsInitiator(
 val messageFromAlice = "Hello Bob, securely in the Post-Quantum era!".encodeToByteArray()
 val firstEncodedMessage = aliceSession.encryptToEncodedString(messageFromAlice).getOrThrow()
 
-// Alice sends `firstEncodedMessage` to the server, along with her `aliceSharedSecret.encapsulationPayload` 
-// so Bob can decapsulate and compute the shared secret.
+// Alice sends `firstEncodedMessage` to the server, along with her `aliceSharedSecret.encapsulationPayload`
+// (which is exported to a string) so Bob can decapsulate and compute the shared secret.
+val alicePayloadString = aliceSharedSecret.encapsulationPayload.exportToEncodedString().getOrThrow()
 ```
 
 #### Phase 3: Bob Responds & Secure Chat Continues
@@ -159,17 +159,23 @@ val firstEncodedMessage = aliceSession.encryptToEncodedString(messageFromAlice).
 Bob receives Alice's request. His device uses his private keys and Alice's provided payload to compute the identical shared secret and initialize his session.
 
 ```kotlin
+import io.kodium.ratchet.PQXDH.PQInitiatorPayload
+
+// Bob parses Alice's payload from the server
+val fetchedAlicePayload = PQInitiatorPayload.importFromEncodedString(alicePayloadString).getOrThrow()
+
 // Bob computes the shared secret using Alice's provided payload
 val bobSharedSecret = PQXDH.calculateSecretAsResponder(
     responderIdentityKey = bobIdentityKey,
     responderPqcKey = bobHybridKeys,
-    initiatorPayload = aliceEncapsulationPayload // Received from Alice
+    initiatorPayload = fetchedAlicePayload // Received from Alice
 )
 
-// Bob initializes his session using his Hybrid Private Key
-val bobSession = DoubleRatchetSession.initializeAsResponder(
-    sharedSecret = bobSharedSecret.masterSecret,
-    responderKeyPair = bobHybridKeys
+// Bob initializes his session using his Hybrid Private Key and Alice's Public Key from the payload
+val bobSession = PQDoubleRatchetSession.initializeAsResponder(
+    sharedSecret = bobSharedSecret,
+    ourPqcPrivateKey = bobHybridKeys,
+    initiatorPqcPublicKey = fetchedAlicePayload.pqcPublicKey!!
 )
 
 // Bob decrypts Alice's first message.
@@ -197,10 +203,10 @@ println("Alice reads: ${decryptedByAlice.decodeToString()}")
 ```
 
 ### Protocol Changes
-When PQC is enabled in a Double Ratchet session:
-*   **Handshake:** The initial key exchange (PQXDH) includes an ML-KEM encapsulation alongside the standard X25519 prekeys.
-*   **Ratchet Steps:** Every asymmetric ratchet step performs both an X25519 DH exchange and an ML-KEM encapsulation/decapsulation. The secrets are combined using HKDF to derive the new root key.
-*   **Header Size:** Message headers are larger. A classical Double Ratchet header is roughly 50 bytes. A PQC header carries the ML-KEM ciphertext (1088 bytes for ML-KEM-768), bringing the header size to slightly over 1KB.
+When PQC is enabled in a Double Ratchet session via `PQDoubleRatchetSession`:
+*   **Handshake:** The initial key exchange (`PQXDH`) includes an ML-KEM encapsulation alongside the standard X25519 prekeys.
+*   **Ratchet Steps:** Every asymmetric ratchet step performs both an X25519 DH exchange and an ML-KEM encapsulation/decapsulation to the static long-term keys. The secrets are combined using HKDF to derive the new root key.
+*   **Header Size:** Message headers are larger. A classical Double Ratchet header is 40 bytes. A `PQRatchetHeader` carries the ML-KEM ciphertext (1088 bytes for ML-KEM-768), bringing the header size to 1,128 bytes.
 
 ---
 

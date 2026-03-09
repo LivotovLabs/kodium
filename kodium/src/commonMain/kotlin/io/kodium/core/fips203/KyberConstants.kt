@@ -29,8 +29,6 @@ import kotlin.jvm.JvmField
  *
  * @author Ron Lauren Hombre
  */
-@OptIn(ExperimentalJsExport::class)
-@JsExport
 object KyberConstants {
     /**
      * Number of coefficients in the polynomial.

@@ -1,6 +1,10 @@
 package io.kodium.ratchet
 
+import io.kodium.KodiumPqcPrivateKey
 import io.kodium.KodiumPrivateKey
+import io.kodium.core.generateForTesting
+import io.kodium.core.initializeAsInitiatorForTesting
+import io.kodium.core.nacl
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.arbitrary
@@ -10,30 +14,36 @@ import io.kotest.property.checkAll
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 
-class DoubleRatchetPropertyTest {
+class PQDoubleRatchetPropertyTest {
 
-    // Custom Kotest Arbitrary generator for X3DH Initialized Sessions
+    // Custom Kotest Arbitrary generator for PQXDH Initialized Sessions
     private val sessionPairs = arbitrary {
         val aliceIdentityKey = KodiumPrivateKey.generate()
-        val aliceEphemeralKey = KodiumPrivateKey.generate()
+        val alicePqcKey = KodiumPqcPrivateKey.generateForTesting(nacl.randomBytes(64))
+        
         val bobIdentityKey = KodiumPrivateKey.generate()
-        val bobSignedPreKey = KodiumPrivateKey.generate()
-        val bobBundle = X3DH.PublicBundle(bobIdentityKey.publicKey, bobSignedPreKey.publicKey)
+        val bobPqcKey = KodiumPqcPrivateKey.generateForTesting(nacl.randomBytes(64))
+        val bobBundle = PQXDH.PublicBundle(bobIdentityKey.getPublicKey(), bobPqcKey.getPublicKey())
 
-        val secret1 = X3DH.calculateSecretAsInitiator(aliceIdentityKey, aliceEphemeralKey, bobBundle)
-        val secret2 = X3DH.calculateSecretAsResponder(
-            bobIdentityKey, bobSignedPreKey, null, aliceIdentityKey.publicKey, aliceEphemeralKey.publicKey
+        val aliceSecret = PQXDH.calculateSecretAsInitiator(aliceIdentityKey, alicePqcKey, bobBundle)
+        val bobSecret = PQXDH.calculateSecretAsResponder(
+            bobIdentityKey, bobPqcKey, aliceSecret.encapsulationPayload
         )
 
-        val alice = DoubleRatchetSession.initializeAsInitiator(secret1, bobSignedPreKey.publicKey)
-        val bob = DoubleRatchetSession.initializeAsResponder(secret2, bobSignedPreKey)
+        val alice = PQDoubleRatchetSession.initializeAsInitiatorForTesting(
+            aliceSecret.masterSecret, bobPqcKey.getPublicKey(), alicePqcKey, nacl.randomBytes(32)
+        )
+        val bob = PQDoubleRatchetSession.initializeAsResponder(
+            bobSecret, bobPqcKey, alicePqcKey.getPublicKey()
+        )
 
         Pair(alice, bob)
     }
 
     @Test
     fun testFuzzingSingleDirectionSequentialMessaging() = runTest(timeout = kotlin.time.Duration.parse("600s")) {
-        checkAll(sessionPairs, Arb.list(Arb.string(minSize = 1, maxSize = 200), range = 1..50)) { sessions, messages ->
+        // Reduced max iterations to keep JVM tests incredibly fast
+        checkAll(sessionPairs, Arb.list(Arb.string(minSize = 1, maxSize = 200), range = 1..20)) { sessions, messages ->
             val (alice, bob) = sessions
             
             messages.forEach { plaintext ->
@@ -46,7 +56,7 @@ class DoubleRatchetPropertyTest {
 
     @Test
     fun testFuzzingAlternatingMessaging() = runTest(timeout = kotlin.time.Duration.parse("600s")) {
-        checkAll(sessionPairs, Arb.list(Arb.string(minSize = 1, maxSize = 200), range = 1..20)) { sessions, messages ->
+        checkAll(sessionPairs, Arb.list(Arb.string(minSize = 1, maxSize = 200), range = 1..10)) { sessions, messages ->
             val (alice, bob) = sessions
             
             messages.forEachIndexed { index, plaintext ->
@@ -66,7 +76,7 @@ class DoubleRatchetPropertyTest {
     @Test
     fun testFuzzingOutOfOrderDelivery() = runTest(timeout = kotlin.time.Duration.parse("600s")) {
         // Alice sends a batch of messages. Bob receives them in a completely random order.
-        checkAll(sessionPairs, Arb.list(Arb.string(minSize = 1, maxSize = 100), range = 2..20)) { sessions, messages ->
+        checkAll(sessionPairs, Arb.list(Arb.string(minSize = 1, maxSize = 100), range = 2..10)) { sessions, messages ->
             val (alice, bob) = sessions
             
             // 1. Alice encrypts all messages

@@ -157,11 +157,10 @@ class DoubleRatchetTest {
         
         // Export Alice's session state
         val password = "secure-storage-password"
-        val exportedState = aliceSession.exportToEncryptedString(password).getOrThrow()
-        
-        // Import Alice's session state into a new object
-        val restoredAliceSession = DoubleRatchetSession.importFromEncryptedString(exportedState, password).getOrThrow()
+        val exportedState = aliceSession.exportToEncryptedString(password, 1).getOrThrow()
 
+        // Import Alice's session state into a new object
+        val restoredAliceSession = DoubleRatchetSession.importFromEncryptedString(exportedState, password, 1).getOrThrow()
         // Bob receives msg1 and replies
         val dec1 = bobSession.decryptFromEncodedString(msg1).getOrThrow()
         assertEquals("Message 1", dec1.decodeToString())
