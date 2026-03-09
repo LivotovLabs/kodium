@@ -23,11 +23,13 @@ object PQXDH {
      * @property identityKey Responder's long-term classical identity public key.
      * @property pqcKey Responder's long-term hybrid public key. The classical portion acts as the Signed PreKey.
      * @property oneTimePreKey Responder's classical one-time pre-key public key (optional).
+     * @property pqcOneTimePreKey Responder's hybrid one-time pre-key public key (optional).
      */
     data class PublicBundle(
         val identityKey: KodiumPublicKey,
         val pqcKey: KodiumPqcPublicKey,
-        val oneTimePreKey: KodiumPublicKey? = null
+        val oneTimePreKey: KodiumPublicKey? = null,
+        val pqcOneTimePreKey: KodiumPqcPublicKey? = null
     ) {
         /**
          * Exports this PublicBundle to a Base58-encoded string with a checksum.
@@ -44,6 +46,13 @@ object PQXDH {
                 } else {
                     writer.write(0.toByte())
                 }
+                if (pqcOneTimePreKey != null) {
+                    writer.write(1.toByte())
+                    writer.write(pqcOneTimePreKey.classicalPublicKey)
+                    writer.write(pqcOneTimePreKey.pqcPublicKey)
+                } else {
+                    writer.write(0.toByte())
+                }
                 Result.success(writer.toByteArray().encodeToBase58WithChecksum())
             } catch (e: Exception) {
                 Result.failure(e)
@@ -57,6 +66,7 @@ object PQXDH {
             if (identityKey != other.identityKey) return false
             if (pqcKey != other.pqcKey) return false
             if (oneTimePreKey != other.oneTimePreKey) return false
+            if (pqcOneTimePreKey != other.pqcOneTimePreKey) return false
 
             return true
         }
@@ -65,6 +75,7 @@ object PQXDH {
             var result = identityKey.hashCode()
             result = 31 * result + pqcKey.hashCode()
             result = 31 * result + (oneTimePreKey?.hashCode() ?: 0)
+            result = 31 * result + (pqcOneTimePreKey?.hashCode() ?: 0)
             return result
         }
 
@@ -85,7 +96,18 @@ object PQXDH {
                     val hasOneTime = reader.readByte() == 1.toByte()
                     val oneTimePreKey = if (hasOneTime) KodiumPublicKey(reader.readBytes(32)) else null
                     
-                    Result.success(PublicBundle(identityKey, pqcKey, oneTimePreKey))
+                    val hasPqcOneTime = try {
+                        reader.readByte() == 1.toByte()
+                    } catch (e: IllegalStateException) {
+                        false
+                    }
+                    val pqcOneTimePreKey = if (hasPqcOneTime) {
+                        val classicalKey = reader.readBytes(32)
+                        val pqcBytes = reader.readBytes(MLKEM.PublicKeySize)
+                        KodiumPqcPublicKey(classicalKey, pqcBytes)
+                    } else null
+                    
+                    Result.success(PublicBundle(identityKey, pqcKey, oneTimePreKey, pqcOneTimePreKey))
                 } catch (e: Exception) {
                     Result.failure(e)
                 }
@@ -101,12 +123,14 @@ object PQXDH {
      * @property ephemeralKey Initiator's ephemeral classical public key.
      * @property kemCiphertext The ML-KEM encapsulated shared secret.
      * @property pqcPublicKey Optional: Initiator's hybrid public key to allow immediate PQC replies.
+     * @property kemCiphertext2 Optional: The second ML-KEM encapsulated shared secret (against PQ OPK).
      */
     data class PQInitiatorPayload(
         val identityKey: KodiumPublicKey,
         val ephemeralKey: KodiumPublicKey,
         val kemCiphertext: ByteArray,
-        val pqcPublicKey: KodiumPqcPublicKey? = null
+        val pqcPublicKey: KodiumPqcPublicKey? = null,
+        val kemCiphertext2: ByteArray? = null
     ) {
         fun exportToEncodedString(): Result<String> {
             return try {
@@ -125,6 +149,14 @@ object PQXDH {
                     writer.write(0.toByte())
                 }
                 
+                if (kemCiphertext2 != null) {
+                    writer.write(1.toByte())
+                    writer.writeInt(kemCiphertext2.size)
+                    writer.write(kemCiphertext2)
+                } else {
+                    writer.write(0.toByte())
+                }
+                
                 Result.success(writer.toByteArray().encodeToBase58WithChecksum())
             } catch (e: Exception) {
                 Result.failure(e)
@@ -139,6 +171,10 @@ object PQXDH {
             if (ephemeralKey != other.ephemeralKey) return false
             if (!kemCiphertext.contentEquals(other.kemCiphertext)) return false
             if (pqcPublicKey != other.pqcPublicKey) return false
+            if (kemCiphertext2 != null) {
+                if (other.kemCiphertext2 == null) return false
+                if (!kemCiphertext2.contentEquals(other.kemCiphertext2)) return false
+            } else if (other.kemCiphertext2 != null) return false
 
             return true
         }
@@ -148,6 +184,7 @@ object PQXDH {
             result = 31 * result + ephemeralKey.hashCode()
             result = 31 * result + kemCiphertext.contentHashCode()
             result = 31 * result + (pqcPublicKey?.hashCode() ?: 0)
+            result = 31 * result + (kemCiphertext2?.contentHashCode() ?: 0)
             return result
         }
 
@@ -170,7 +207,17 @@ object PQXDH {
                         KodiumPqcPublicKey(classicalKey, pqcBytes)
                     } else null
                     
-                    Result.success(PQInitiatorPayload(idKey, ephKey, kemCt, pqcKey))
+                    val hasKem2 = try {
+                        reader.readByte() == 1.toByte()
+                    } catch (e: IllegalStateException) {
+                        false
+                    }
+                    val kemCt2 = if (hasKem2) {
+                        val size = reader.readInt()
+                        reader.readBytes(size)
+                    } else null
+                    
+                    Result.success(PQInitiatorPayload(idKey, ephKey, kemCt, pqcKey, kemCt2))
                 } catch (e: Exception) {
                     Result.failure(e)
                 }
@@ -235,10 +282,18 @@ object PQXDH {
         // PQC Encapsulation
         val (sharedSecretPqc, kemCiphertext) = MLKEM.encapsulate(responderBundle.pqcKey.pqcPublicKey)
 
+        var sharedSecretPqc2: ByteArray? = null
+        var kemCiphertext2: ByteArray? = null
+        if (responderBundle.pqcOneTimePreKey != null) {
+            val result = MLKEM.encapsulate(responderBundle.pqcOneTimePreKey.pqcPublicKey)
+            sharedSecretPqc2 = result.first
+            kemCiphertext2 = result.second
+        }
+
         // Mix all secrets
         val masterSecret = HKDF.deriveSecrets(
             salt = ByteArray(32) { 0 },
-            ikm = dhOut + sharedSecretPqc,
+            ikm = dhOut + sharedSecretPqc + (sharedSecretPqc2 ?: ByteArray(0)),
             info = info,
             length = 32
         )
@@ -247,7 +302,8 @@ object PQXDH {
             identityKey = initiatorIdentityKey.getPublicKey(),
             ephemeralKey = initiatorEphemeralKey.getPublicKey(),
             kemCiphertext = kemCiphertext,
-            pqcPublicKey = initiatorPqcKey.getPublicKey()
+            pqcPublicKey = initiatorPqcKey.getPublicKey(),
+            kemCiphertext2 = kemCiphertext2
         )
 
         return PQSharedSecret(masterSecret, payload)
@@ -259,6 +315,7 @@ object PQXDH {
      * @param responderPqcKey Responder's hybrid private key.
      * @param initiatorPayload The payload received from the initiator.
      * @param responderOneTimePreKey Responder's optional one-time pre-key private key.
+     * @param responderPqcOneTimePreKey Responder's optional hybrid one-time pre-key private key.
      * @param info Optional application-specific information for key derivation.
      * @return The 32-byte master secret.
      */
@@ -267,6 +324,7 @@ object PQXDH {
         responderPqcKey: KodiumPqcPrivateKey,
         initiatorPayload: PQInitiatorPayload,
         responderOneTimePreKey: KodiumPrivateKey? = null,
+        responderPqcOneTimePreKey: KodiumPqcPrivateKey? = null,
         info: ByteArray = INFO_PQXDH
     ): ByteArray {
         // dh1 = DH(SPK_B, IK_A)
@@ -287,10 +345,16 @@ object PQXDH {
         val sharedSecretPqc = MLKEM.decapsulate(initiatorPayload.kemCiphertext, responderPqcKey.pqcSecretKey)
             ?: throw IllegalStateException("ML-KEM decapsulation failed")
 
+        var sharedSecretPqc2: ByteArray? = null
+        if (responderPqcOneTimePreKey != null && initiatorPayload.kemCiphertext2 != null) {
+            sharedSecretPqc2 = MLKEM.decapsulate(initiatorPayload.kemCiphertext2, responderPqcOneTimePreKey.pqcSecretKey)
+                ?: throw IllegalStateException("ML-KEM decapsulation failed for OPK")
+        }
+
         // Mix all secrets
         return HKDF.deriveSecrets(
             salt = ByteArray(32) { 0 },
-            ikm = dhOut + sharedSecretPqc,
+            ikm = dhOut + sharedSecretPqc + (sharedSecretPqc2 ?: ByteArray(0)),
             info = info,
             length = 32
         )
