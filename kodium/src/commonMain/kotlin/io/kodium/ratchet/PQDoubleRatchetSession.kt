@@ -29,14 +29,16 @@ class PQDoubleRatchetSession internal constructor(
     private var Ns: Int = 0,
     private var Nr: Int = 0,
     private var PN: Int = 0,
-    private val MKSKIPPED: MutableMap<String, ByteArray> = mutableMapOf(),
-    private val applicationInfo: ByteArray = DEFAULT_INFO_KDF_RK
+    private val MKSKIPPED: MutableMap<String, ByteArray> = LinkedHashMap(),
+    private val applicationInfo: ByteArray = DEFAULT_INFO_KDF_RK,
+    val maxSkippedMessages: Int = DEFAULT_MAX_SKIPPED_MESSAGES
 ) {
     companion object {
         // HKDF Info Constants
         private val DEFAULT_INFO_KDF_RK = "KodiumKdfRk".encodeToByteArray()
 
         private const val MAX_SKIP = 1000
+        const val DEFAULT_MAX_SKIPPED_MESSAGES = 2000
 
         /**
          * Initializes a new PQ Double Ratchet session for the Initiator.
@@ -45,12 +47,15 @@ class PQDoubleRatchetSession internal constructor(
          * @param responderPqcPublicKey The Responder's long-term PQC public key.
          * @param ourPqcPrivateKey The Initiator's long-term PQC private key.
          * @param applicationInfo Optional context-binding string.
+         * @param maxSkippedMessages The maximum number of skipped message keys to store in memory (default 2000).
+         *                           When exceeded, the oldest keys are evicted first (LRU behavior) preventing unbounded memory growth.
          */
         fun initializeAsInitiator(
             sharedSecret: ByteArray,
             responderPqcPublicKey: KodiumPqcPublicKey,
             ourPqcPrivateKey: KodiumPqcPrivateKey,
-            applicationInfo: ByteArray = DEFAULT_INFO_KDF_RK
+            applicationInfo: ByteArray = DEFAULT_INFO_KDF_RK,
+            maxSkippedMessages: Int = DEFAULT_MAX_SKIPPED_MESSAGES
         ): PQDoubleRatchetSession {
             val dhs = KodiumPrivateKey.generate()
             
@@ -78,7 +83,8 @@ class PQDoubleRatchetSession internal constructor(
                 RK = rk,
                 CKs = cks,
                 CKr = null,
-                applicationInfo = applicationInfo
+                applicationInfo = applicationInfo,
+                maxSkippedMessages = maxSkippedMessages
             )
         }
 
@@ -89,12 +95,15 @@ class PQDoubleRatchetSession internal constructor(
          * @param ourPqcPrivateKey The Responder's long-term PQC private key.
          * @param initiatorPqcPublicKey The Initiator's long-term PQC public key.
          * @param applicationInfo Optional context-binding string.
+         * @param maxSkippedMessages The maximum number of skipped message keys to store in memory (default 2000).
+         *                           When exceeded, the oldest keys are evicted first (LRU behavior) preventing unbounded memory growth.
          */
         fun initializeAsResponder(
             sharedSecret: ByteArray,
             ourPqcPrivateKey: KodiumPqcPrivateKey,
             initiatorPqcPublicKey: KodiumPqcPublicKey,
-            applicationInfo: ByteArray = DEFAULT_INFO_KDF_RK
+            applicationInfo: ByteArray = DEFAULT_INFO_KDF_RK,
+            maxSkippedMessages: Int = DEFAULT_MAX_SKIPPED_MESSAGES
         ): PQDoubleRatchetSession {
             val dhs = KodiumPrivateKey.fromRaw(ourPqcPrivateKey.classicalSecretKey)
             
@@ -107,7 +116,8 @@ class PQDoubleRatchetSession internal constructor(
                 RK = sharedSecret,
                 CKs = null,
                 CKr = null,
-                applicationInfo = applicationInfo
+                applicationInfo = applicationInfo,
+                maxSkippedMessages = maxSkippedMessages
             )
         }
 
@@ -163,6 +173,13 @@ class PQDoubleRatchetSession internal constructor(
                 val appInfoLen = reader.readInt()
                 val appInfo = reader.readBytes(appInfoLen)
                 
+                // Read optional maxSkippedMessages if available in newer serializations
+                val maxSkipped = try {
+                    reader.readInt()
+                } catch (e: IllegalStateException) {
+                    DEFAULT_MAX_SKIPPED_MESSAGES
+                }
+                
                 PQDoubleRatchetSession(
                     ourPqcKey = ourPqcKey,
                     theirPqcPublicKey = theirPqcPublicKey,
@@ -176,7 +193,8 @@ class PQDoubleRatchetSession internal constructor(
                     Nr = nr,
                     PN = pn,
                     MKSKIPPED = mkSkipped,
-                    applicationInfo = appInfo
+                    applicationInfo = appInfo,
+                    maxSkippedMessages = maxSkipped
                 )
             }
         }
@@ -240,6 +258,8 @@ class PQDoubleRatchetSession internal constructor(
 
             writer.writeInt(applicationInfo.size)
             writer.write(applicationInfo)
+            
+            writer.writeInt(maxSkippedMessages)
             
             io.kodium.Kodium.encryptSymmetricToEncodedString(password, writer.toByteArray(), keyDerivationIterations)
         } catch (e: Exception) {
@@ -365,6 +385,14 @@ class PQDoubleRatchetSession internal constructor(
             val (newCkr, mk) = kdfCk(ckr)
             ckr = newCkr
             this.MKSKIPPED[RatchetUtils.toHex(DHr!!) + this.Nr] = mk
+            
+            // Enforce LRU Memory Limit
+            if (this.MKSKIPPED.size > this.maxSkippedMessages) {
+                // LinkedHashMap maintains insertion order; removing the first key evicts the oldest.
+                val oldestKey = this.MKSKIPPED.keys.first()
+                this.MKSKIPPED.remove(oldestKey)
+            }
+            
             this.Nr += 1
         }
         this.CKr = ckr

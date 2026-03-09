@@ -38,6 +38,12 @@ object Kodium {
         /**
          * Encrypts data using a hybrid approach (X25519 + ML-KEM).
          *
+         * **WARNING: Lack of Forward Secrecy.**
+         * This method uses static keys for encryption. If either the sender's or
+         * receiver's long-term key is compromised, all past messages encrypted between them can be
+         * decrypted. For continuous, secure communication with forward secrecy and break-in recovery,
+         * use [io.kodium.ratchet.PQDoubleRatchetSession] instead.
+         *
          * @param mySecretKey The sender's hybrid private key.
          * @param theirPublicKey The recipient's hybrid public key.
          * @param data The data to be encrypted.
@@ -123,6 +129,12 @@ object Kodium {
 
         /**
          * Encrypts the given data using hybrid PQC and encodes the result to a Base58 string with a checksum.
+         *
+         * **WARNING: Lack of Forward Secrecy.**
+         * This method uses static keys for encryption. If either the sender's or
+         * receiver's long-term key is compromised, all past messages encrypted between them can be
+         * decrypted. For continuous, secure communication with forward secrecy and break-in recovery,
+         * use [io.kodium.ratchet.PQDoubleRatchetSession] instead.
          */
         fun encryptToEncodedString(
             mySecretKey: KodiumPqcPrivateKey,
@@ -293,6 +305,12 @@ object Kodium {
     /**
      * Encrypts the given data using a symmetric encryption algorithm.
      *
+     * **Post-Quantum Security:** Symmetric encryption using 256-bit keys and XSalsa20
+     * (as implemented here) is considered resistant to attacks by future quantum computers.
+     * Unlike asymmetric algorithms, Grover's algorithm only provides a square-root speedup
+     * for symmetric key searches, effectively meaning a 256-bit key remains as secure
+     * against a quantum computer as a 128-bit key is against a classical computer today.
+     *
      * This method generates a unique nonce for every encryption process,
      * derives a cryptographic key using HMAC-SHA512, and encrypts the data
      * with the derived key and the nonce using a secret box encryption mechanism.
@@ -333,7 +351,6 @@ object Kodium {
             // 6. Return the combined output: [salt][nonce][box]
             Result.success(salt + nonce + box)
         } catch (err: Throwable) {
-            err.printStackTrace()
             Result.failure(err)
         }
     }

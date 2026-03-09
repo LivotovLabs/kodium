@@ -46,7 +46,6 @@ object MLKEM {
             val ct = KyberCipherText.fromBytes(ciphertext)
             key.decapsulate(ct)
         } catch (e: Exception) {
-            e.printStackTrace()
             null
         }
     }

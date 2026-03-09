@@ -166,6 +166,26 @@ val decoded = session.decryptFromEncodedString(encoded, associatedData).getOrThr
 
 Kodium automatically handles appending the plaintext Ratchet header to the Associated Data to authenticate it during the AEAD encryption process.
 
+## Memory Management: Handling Skipped Messages
+
+The Double Ratchet algorithm must store "skipped message keys" to handle messages that arrive out-of-order. If left unbounded, this could lead to memory exhaustion attacks.
+
+Kodium automatically manages this using a **Least Recently Used (LRU) eviction policy**:
+*   By default, each session stores up to **2,000** skipped message keys.
+*   When this limit is reached, the oldest skipped key is automatically evicted to make room for new ones.
+*   If an ancient message finally arrives after its key has been evicted, decryption will fail for that specific message, but the session remains healthy for all other traffic.
+
+### Configuring the Limit
+You can customize this limit during session initialization if your application requires a different balance between memory usage and out-of-order resilience:
+
+```kotlin
+val session = DoubleRatchetSession.initializeAsInitiator(
+    sharedSecret = sharedSecret,
+    responderRatchetKey = responderKey,
+    maxSkippedMessages = 5000 // Increase for extremely unreliable networks
+)
+```
+
 ## Persisting Sessions Between App Restarts
 
 Since a Double Ratchet session manages several moving pieces (ratchet keys, chains, and out-of-order message keys), you will need to store its state securely between app restarts.

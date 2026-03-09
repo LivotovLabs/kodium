@@ -41,8 +41,8 @@ Write once, encrypt everywhere. Even in a post-quantum world.
 
 *   **Pure Kotlin:** No JNI, no C interop headaches, no complex build scripts for native binaries. Just pure Kotlin code running everywhere.
 *   **TweetNaCl Core:** Built on the solid foundation of the TweetNaCl crypto suite, known for its security and simplicity.
-*   **Post-Quantum Ready:** Hybrid cryptographic primitives combining classical X25519 with FIPS 203 (ML-KEM) to protect against future quantum computers.
-*   **Double Ratchet:** Includes a full implementation of the Double Ratchet Algorithm and X3DH for secure End-to-End Encryption (E2EE).
+*   **Post-Quantum Ready:** Hybrid cryptographic primitives combining classical X25519 with FIPS 203 (ML-KEM) to protect against future quantum computers. Note that symmetric encryption (SecretBox) is naturally quantum-resistant.
+*   **Double Ratchet:** Includes a full implementation of the Double Ratchet Algorithm and X3DH for secure End-to-End Encryption (E2EE), featuring a built-in LRU policy for skipped message keys to prevent memory exhaustion.
 *   **Multiplatform Native:** First-class support for Android, iOS, JVM, JavaScript (Browser/Node), Wasm, Linux, macOS, and Windows.
 *   **Developer Friendly:** Simple, opinionated APIs for common tasks (Box, SecretBox, Signatures).
 
