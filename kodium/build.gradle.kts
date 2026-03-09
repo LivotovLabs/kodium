@@ -77,11 +77,11 @@ android {
 
 mavenPublishing {
     publishToMavenCentral()
-    coordinates("eu.livotov.labs", "kodium", "0.0.1")
+    coordinates("eu.livotov.labs", "kodium", "1.0.0-alpha-1")
 
     pom {
         name = "Kodium"
-        description = "A pure Kotlin implementation of the NaCl (libsodium) cryptography suite. Zero native dependencies, 100% Kotlin Multiplatform (KMP). Secure your Android, iOS, JVM, and JS apps instantly."
+        description = "Pure Kotlin implementation of TweetNaCl and Double Ratchet with hybrid Post-Quantum (PQC) support. Zero native dependencies, 100% KMP. Secure your Android, iOS, JVM, Web, and Native apps with one library."
         url = "https://github.com/LivotovLabs/kodium"
 
         licenses {
