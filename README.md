@@ -23,17 +23,12 @@ Write once, encrypt everywhere. Even in a post-quantum world.
 3. [Features](#-features)
 4. [Installation](#-installation)
 5. [Quick Start Guide](#-quick-start)
-   - [Secure Messaging (Double Ratchet)](#1-secure-messaging-double-ratchet)
-   - [Post-Quantum Encryption (Hybrid PQC)](#2-post-quantum-encryption-hybrid-pqc)
-   - [Asymmetric Encryption (Box)](#3-asymmetric-encryption-box)
-   - [Symmetric Encryption (SecretBox)](#4-symmetric-encryption-secretbox)
-   - [Key Export & Import](#5-key-export--import)
-6. [Examples and Deep Dives](#-examples--deep-dives)
-6. [Utilities](#-utilities)
-   - [Base58 Encoding](#base58-encoding)
-   - [Password-Based Key Derivation (PBKDF2)](#password-based-key-derivation-pbkdf2)
-7. [Release Notes](#-release-notes)
-8. [License & Disclaimer](#-license)
+6. [Documentation](#-documentation)
+7. [Examples and Deep Dives](#-examples--deep-dives)
+8. [Utilities](#-utilities)
+9. [Contributing](#-contributing)
+10. [Release Notes](#-release-notes)
+11. [License & Disclaimer](#-license)
 
 ---
 
@@ -229,6 +224,15 @@ val restoredKeyPair = KodiumPrivateKey.importFromEncryptedString(
 
 ---
 
+## 📖 Documentation
+
+The complete documentation for Kodium is available in the [docs/](docs/README.md) directory, which is structured for GitBook.
+
+*   [**Manual**](docs/README.md): High-level guides, architectural overviews, and usage examples.
+*   [**API Reference**](docs/api/index.md): Detailed documentation for every package, class, and function, generated from KDocs.
+
+---
+
 ## 🛠 Utilities
 
 ### Base58 Encoding
@@ -284,6 +288,12 @@ Future-proof your application against "Harvest Now, Decrypt Later" attacks by up
 *   Establishing a Post-Quantum Double Ratchet session for next-generation E2EE security.
 
 👉 **[Read the full PQC Reference Guide](PQC.md)**
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! If you're interested in building Kodium from source, running tests, or updating the documentation, please refer to our [Developer Guide](DEVELOPER.md).
 
 ---
 

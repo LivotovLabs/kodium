@@ -1,0 +1,18 @@
+//[kodium](../../../../index.md)/[io.kodium](../../index.md)/[Kodium](../index.md)/[pqc](index.md)
+
+# pqc
+
+[common]\
+object [pqc](index.md)
+
+Post-Quantum Cryptography (PQC) operations. This namespace provides hybrid cryptographic primitives that combine classical X25519 with Post-Quantum ML-KEM (Kyber) to ensure security against both classical and future quantum computers.
+
+## Functions
+
+| Name | Summary |
+|---|---|
+| [decrypt](decrypt.md) | [common]<br>fun [decrypt](decrypt.md)(mySecretKey: [KodiumPqcPrivateKey](../../-kodium-pqc-private-key/index.md), theirPublicKey: [KodiumPqcPublicKey](../../-kodium-pqc-public-key/index.md), cipher: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html)): &lt;Error class: unknown class&gt;&lt;[ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html)&gt;<br>Decrypts data using a hybrid approach (X25519 + ML-KEM). |
+| [decryptFromEncodedString](decrypt-from-encoded-string.md) | [common]<br>fun [decryptFromEncodedString](decrypt-from-encoded-string.md)(mySecretKey: [KodiumPqcPrivateKey](../../-kodium-pqc-private-key/index.md), theirPublicKey: [KodiumPqcPublicKey](../../-kodium-pqc-public-key/index.md), data: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html)): &lt;Error class: unknown class&gt;&lt;[ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html)&gt;<br>Decrypts an encoded string using hybrid PQC. |
+| [encrypt](encrypt.md) | [common]<br>fun [encrypt](encrypt.md)(mySecretKey: [KodiumPqcPrivateKey](../../-kodium-pqc-private-key/index.md), theirPublicKey: [KodiumPqcPublicKey](../../-kodium-pqc-public-key/index.md), data: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html)): &lt;Error class: unknown class&gt;&lt;[ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html)&gt;<br>Encrypts data using a hybrid approach (X25519 + ML-KEM). |
+| [encryptToEncodedString](encrypt-to-encoded-string.md) | [common]<br>fun [encryptToEncodedString](encrypt-to-encoded-string.md)(mySecretKey: [KodiumPqcPrivateKey](../../-kodium-pqc-private-key/index.md), theirPublicKey: [KodiumPqcPublicKey](../../-kodium-pqc-public-key/index.md), data: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html)): &lt;Error class: unknown class&gt;&lt;[String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html)&gt;<br>Encrypts the given data using hybrid PQC and encodes the result to a Base58 string with a checksum. |
+| [generateKeyPair](generate-key-pair.md) | [common]<br>fun [generateKeyPair](generate-key-pair.md)(): [KodiumPqcPrivateKey](../../-kodium-pqc-private-key/index.md)<br>Generates a hybrid post-quantum key pair. |
