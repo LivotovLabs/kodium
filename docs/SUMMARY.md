@@ -4,6 +4,7 @@
 * [Getting Started](getting-started/quick-start.md)
 * [Core Cryptography](core-crypto/README.md)
   * [Key Management](core-crypto/key-management.md)
+  * [Digital Signatures](core-crypto/digital-signatures.md)
   * [Asymmetric Encryption (Box)](core-crypto/asymmetric-box.md)
   * [Symmetric Encryption (SecretBox)](core-crypto/symmetric-secretbox.md)
 * [End-to-End Encryption](e2ee/README.md)

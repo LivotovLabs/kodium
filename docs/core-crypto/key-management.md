@@ -13,8 +13,11 @@ import io.kodium.KodiumPrivateKey
 // Generate a new key pair
 val myKeyPair: KodiumPrivateKey = Kodium.generateKeyPair()
 
-// Extract the public part to share with others
+// Extract the public part to share with others for encryption (Box)
 val myPublicKey = myKeyPair.getPublicKey()
+
+// Extract the public part to share with others for digital signatures (Ed25519)
+val mySignPublicKey = myKeyPair.getSignPublicKey()
 ```
 
 ## Exporting and Importing

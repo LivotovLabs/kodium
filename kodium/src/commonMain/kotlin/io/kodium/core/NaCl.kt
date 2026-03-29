@@ -133,4 +133,49 @@ object nacl {
             return SecretBox.open(box, nonce, k)
         }
     }
+
+    /**
+     * Ed25519 Digital Signatures (Detached)
+     */
+    object Sign {
+        const val PublicKeySize = 32
+        const val SecretKeySize = 64
+        const val SignatureSize = 64
+
+        /**
+         * Generates an Ed25519 key pair from a 32-byte seed.
+         */
+        fun keyPairFromSeed(seed: ByteArray): Pair<ByteArray, ByteArray> {
+            require(seed.size == 32) { "Invalid seed size" }
+            val pk = ByteArray(PublicKeySize)
+            val sk = ByteArray(SecretKeySize)
+            NaClLowLevel.crypto_sign_seed_keypair(pk, sk, seed)
+            return Pair(pk, sk)
+        }
+
+        /**
+         * Signs a message and returns ONLY the 64-byte signature (detached).
+         */
+        fun signDetached(message: ByteArray, secretKey: ByteArray): ByteArray {
+            require(secretKey.size == SecretKeySize) { "Invalid secret key size" }
+            val sm = ByteArray(message.size + SignatureSize)
+            NaClLowLevel.crypto_sign(sm, message, message.size.toULong(), secretKey)
+            return sm.copyOfRange(0, SignatureSize)
+        }
+
+        /**
+         * Verifies a 64-byte detached signature against a message and public key.
+         * Returns true if valid, false otherwise.
+         */
+        fun verifyDetached(signature: ByteArray, message: ByteArray, publicKey: ByteArray): Boolean {
+            require(signature.size == SignatureSize) { "Invalid signature size" }
+            require(publicKey.size == PublicKeySize) { "Invalid public key size" }
+            val sm = ByteArray(signature.size + message.size)
+            signature.copyInto(sm, 0)
+            message.copyInto(sm, signature.size)
+            val m = ByteArray(sm.size)
+            val result = NaClLowLevel.crypto_sign_open(m, sm, sm.size.toULong(), publicKey)
+            return result == 0
+        }
+    }
 }

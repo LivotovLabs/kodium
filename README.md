@@ -220,7 +220,25 @@ encryptedResult.onSuccess { cipherText ->
 }
 ```
 
-### 5. Key Export & Import
+### 5. Digital Signatures
+Prove authenticity and integrity using detached Ed25519 digital signatures.
+
+```kotlin
+val myPrivateKey = Kodium.generateKeyPair()
+val message = "This message is authentic".encodeToByteArray()
+
+// Sign
+val signatureB58 = Kodium.signDetachedToEncodedString(myPrivateKey, message).getOrThrow()
+
+// Verify using the signer's Public Key
+val isValid = Kodium.verifyDetachedFromEncodedString(
+    theirPublicKey = myPrivateKey.getSignPublicKey(), 
+    data = message, 
+    signatureB58 = signatureB58
+)
+```
+
+### 6. Key Export & Import
 Easily store keys using Base58Check encoding.
 
 ```kotlin
@@ -228,6 +246,9 @@ val keyPair = Kodium.generateKeyPair()
 
 // Export Public Key (Safe to share)
 val pubKeyString = keyPair.getPublicKey().exportToEncodedString()
+
+// Export Signing Public Key (Safe to share, needed for signature verification)
+val signPubKeyString = keyPair.getSignPublicKey().exportToEncodedString()
 
 // Export Private Key (Encrypted with a password)
 val privKeyString = keyPair.exportToEncryptedString("StrongPassword")
