@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html class="no-js">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>Kodium</title>
+    <link href="../../../images/logo-icon.svg" rel="icon" type="image/svg">
+    <script>var pathToRoot = "../../../";</script>
+    <script>document.documentElement.classList.replace("no-js","js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+    if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+    } else {
+        const savedDarkMode = JSON.parse(storage)
+        if(savedDarkMode === true) {
+            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+    }
+    </script>
+<script type="text/javascript" src="https://unpkg.com/kotlin-playground@1/dist/playground.min.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/sourceset_dependencies.js" async="async"></script>
+<link href="../../../styles/style.css" rel="Stylesheet">
+<link href="../../../styles/main.css" rel="Stylesheet">
+<link href="../../../styles/prism.css" rel="Stylesheet">
+<link href="../../../styles/logo-styles.css" rel="Stylesheet">
+<link href="../../../styles/font-jb-sans-auto.css" rel="Stylesheet">
+<script type="text/javascript" src="../../../scripts/clipboard.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/navigation-loader.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/platform-content-handler.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/main.js" defer="defer"></script>
+<script type="text/javascript" src="../../../scripts/prism.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/symbol-parameters-wrapper_deferred.js" defer="defer"></script>
+</head>
+<body>
+    <div class="root">
+<nav class="navigation" id="navigation-wrapper">
+    <div class="navigation--inner">
+        <div class="navigation-title">
+            <button class="menu-toggle" id="menu-toggle" type="button">toggle menu</button>
+            <div class="library-name">
+                    <a class="library-name--link" href="../../../index.html">
+                            kodium
+                    </a>
+            </div>
+            <div class="library-version">
+            </div>
+        </div>
+        <div class="filter-section" id="filter-section">
+                <button class="platform-tag platform-selector common-like" data-active="" data-filter=":kodium:dokkaHtml/commonMain">common</button>
+        </div>
+    </div>
+    <div class="navigation-controls">
+        <button class="navigation-controls--btn navigation-controls--theme" id="theme-toggle-button" type="button">switch theme</button>
+        <div class="navigation-controls--btn navigation-controls--search" id="searchBar" role="button">search in API</div>
+    </div>
+</nav>
+        <div id="container">
+            <div class="sidebar" id="leftColumn">
+                <div class="sidebar--inner" id="sideMenu"></div>
+            </div>
+            <div id="main">
+<div class="main-content" data-page-type="classlike" id="content" pageIds="kodium::io.kodium/Kodium///PointingToDeclaration//-577215565">
+  <div class="breadcrumbs"><a href="../../../index.html">kodium</a><span class="delimiter">/</span><a href="../index.html">io.kodium</a><span class="delimiter">/</span><span class="current">Kodium</span></div>
+  <div class="cover ">
+    <h1 class="cover"><span><span>Kodium</span></span></h1>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kodium:dokkaHtml/commonMain"><div class="symbol monospace"><span class="token keyword">object </span><a href="index.html">Kodium</a></div><p class="paragraph">Kodium is a cryptographic utility object for key pair generation, encryption, and decryption. It supports both asymmetric and symmetric encryption methods, allowing for secure communication and data storage. Encoded data is managed using Base58 encoding with checksum for integrity verification.</p><p class="paragraph">The object leverages NaCl for encryption backend and HMAC for password-based symmetric encryption.</p></div></div>
+  </div>
+  <div class="tabbedcontent">
+    <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION">Members</button></div>
+    <div class="tabs-section-body">
+      <div data-togglable="TYPE">
+        <h2 class="">Types</h2>
+        <div class="table"><a data-name="1487359830%2FClasslikes%2F-577215565" anchor-label="pqc" id="1487359830%2FClasslikes%2F-577215565" data-filterable-set=":kodium:dokkaHtml/commonMain"></a>
+          <div class="table-row" data-filterable-current=":kodium:dokkaHtml/commonMain" data-filterable-set=":kodium:dokkaHtml/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="pqc/index.html"><span><span>pqc</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1487359830%2FClasslikes%2F-577215565"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kodium:dokkaHtml/commonMain"><div class="symbol monospace"><span class="token keyword">object </span><a href="pqc/index.html">pqc</a></div><div class="brief "><p class="paragraph">Post-Quantum Cryptography (PQC) operations. This namespace provides hybrid cryptographic primitives that combine classical X25519 with Post-Quantum ML-KEM (Kyber) to ensure security against both classical and future quantum computers.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-togglable="PROPERTY">
+        <h2 class="">Properties</h2>
+        <div class="table"><a data-name="187175847%2FProperties%2F-577215565" anchor-label="PBKDF2_ITERATIONS" id="187175847%2FProperties%2F-577215565" data-filterable-set=":kodium:dokkaHtml/commonMain"></a>
+          <div class="table-row" data-filterable-current=":kodium:dokkaHtml/commonMain" data-filterable-set=":kodium:dokkaHtml/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-p-b-k-d-f2_-i-t-e-r-a-t-i-o-n-s.html"><span><span>PBKDF2_ITERATIONS</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="187175847%2FProperties%2F-577215565"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kodium:dokkaHtml/commonMain"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-p-b-k-d-f2_-i-t-e-r-a-t-i-o-n-s.html">PBKDF2_ITERATIONS</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-int/index.html">Int</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-togglable="FUNCTION">
+        <h2 class="">Functions</h2>
+        <div class="table"><a data-name="-899577659%2FFunctions%2F-577215565" anchor-label="decodeArrayFromString" id="-899577659%2FFunctions%2F-577215565" data-filterable-set=":kodium:dokkaHtml/commonMain"></a>
+          <div class="table-row" data-filterable-current=":kodium:dokkaHtml/commonMain" data-filterable-set=":kodium:dokkaHtml/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="decode-array-from-string.html"><span>decode</span><wbr></wbr><span>Array</span><wbr></wbr><span>From</span><wbr></wbr><span><span>String</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-899577659%2FFunctions%2F-577215565"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kodium:dokkaHtml/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="decode-array-from-string.html"><span class="token function">decodeArrayFromString</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">data<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html">String</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="/&amp;lt;Error class: unknown class&amp;gt;///PointingToDeclaration/">&lt;Error class: unknown class&gt;</span><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html">ByteArray</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Decodes a base58 encoded string with checksum into a byte array.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="377321586%2FFunctions%2F-577215565" anchor-label="decrypt" id="377321586%2FFunctions%2F-577215565" data-filterable-set=":kodium:dokkaHtml/commonMain"></a>
+          <div class="table-row" data-filterable-current=":kodium:dokkaHtml/commonMain" data-filterable-set=":kodium:dokkaHtml/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="decrypt.html"><span><span>decrypt</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="377321586%2FFunctions%2F-577215565"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kodium:dokkaHtml/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="decrypt.html"><span class="token function">decrypt</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">mySecretKey<span class="token operator">: </span><a href="../-kodium-private-key/index.html">KodiumPrivateKey</a><span class="token punctuation">, </span></span><span class="parameter ">theirPublicKey<span class="token operator">: </span><a href="../-kodium-public-key/index.html">KodiumPublicKey</a><span class="token punctuation">, </span></span><span class="parameter ">cipher<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html">ByteArray</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="/&amp;lt;Error class: unknown class&amp;gt;///PointingToDeclaration/">&lt;Error class: unknown class&gt;</span><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html">ByteArray</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Decrypts a cipher text using the receiver's private key and the sender's public key.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-977758941%2FFunctions%2F-577215565" anchor-label="decryptFromEncodedString" id="-977758941%2FFunctions%2F-577215565" data-filterable-set=":kodium:dokkaHtml/commonMain"></a>
+          <div class="table-row" data-filterable-current=":kodium:dokkaHtml/commonMain" data-filterable-set=":kodium:dokkaHtml/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="decrypt-from-encoded-string.html"><span>decrypt</span><wbr></wbr><span>From</span><wbr></wbr><span>Encoded</span><wbr></wbr><span><span>String</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-977758941%2FFunctions%2F-577215565"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kodium:dokkaHtml/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="decrypt-from-encoded-string.html"><span class="token function">decryptFromEncodedString</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">mySecretKey<span class="token operator">: </span><a href="../-kodium-private-key/index.html">KodiumPrivateKey</a><span class="token punctuation">, </span></span><span class="parameter ">theirPublicKey<span class="token operator">: </span><a href="../-kodium-public-key/index.html">KodiumPublicKey</a><span class="token punctuation">, </span></span><span class="parameter ">data<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html">String</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="/&amp;lt;Error class: unknown class&amp;gt;///PointingToDeclaration/">&lt;Error class: unknown class&gt;</span><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html">ByteArray</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Decrypts an encoded string using the recipient's private key and the sender's public key.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-897698981%2FFunctions%2F-577215565" anchor-label="decryptSymmetric" id="-897698981%2FFunctions%2F-577215565" data-filterable-set=":kodium:dokkaHtml/commonMain"></a>
+          <div class="table-row" data-filterable-current=":kodium:dokkaHtml/commonMain" data-filterable-set=":kodium:dokkaHtml/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="decrypt-symmetric.html"><span>decrypt</span><wbr></wbr><span><span>Symmetric</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-897698981%2FFunctions%2F-577215565"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kodium:dokkaHtml/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="decrypt-symmetric.html"><span class="token function">decryptSymmetric</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">password<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">cipher<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html">ByteArray</a><span class="token punctuation">, </span></span><span class="parameter ">keyDerivationIterations<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span>PBKDF2_ITERATIONS</span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="/&amp;lt;Error class: unknown class&amp;gt;///PointingToDeclaration/">&lt;Error class: unknown class&gt;</span><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html">ByteArray</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Decrypts a byte array that was encrypted using symmetric encryption with a provided password.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="485209390%2FFunctions%2F-577215565" anchor-label="decryptSymmetricFromEncodedString" id="485209390%2FFunctions%2F-577215565" data-filterable-set=":kodium:dokkaHtml/commonMain"></a>
+          <div class="table-row" data-filterable-current=":kodium:dokkaHtml/commonMain" data-filterable-set=":kodium:dokkaHtml/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="decrypt-symmetric-from-encoded-string.html"><span>decrypt</span><wbr></wbr><span>Symmetric</span><wbr></wbr><span>From</span><wbr></wbr><span>Encoded</span><wbr></wbr><span><span>String</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="485209390%2FFunctions%2F-577215565"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kodium:dokkaHtml/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="decrypt-symmetric-from-encoded-string.html"><span class="token function">decryptSymmetricFromEncodedString</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">password<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">data<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">keyDerivationIterations<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span>PBKDF2_ITERATIONS</span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="/&amp;lt;Error class: unknown class&amp;gt;///PointingToDeclaration/">&lt;Error class: unknown class&gt;</span><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html">ByteArray</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Decrypts an encoded Base58 string that was encrypted using symmetric encryption.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1895771342%2FFunctions%2F-577215565" anchor-label="encodeArrayToString" id="-1895771342%2FFunctions%2F-577215565" data-filterable-set=":kodium:dokkaHtml/commonMain"></a>
+          <div class="table-row" data-filterable-current=":kodium:dokkaHtml/commonMain" data-filterable-set=":kodium:dokkaHtml/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="encode-array-to-string.html"><span>encode</span><wbr></wbr><span>Array</span><wbr></wbr><span>To</span><wbr></wbr><span><span>String</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1895771342%2FFunctions%2F-577215565"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kodium:dokkaHtml/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="encode-array-to-string.html"><span class="token function">encodeArrayToString</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">data<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html">ByteArray</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="/&amp;lt;Error class: unknown class&amp;gt;///PointingToDeclaration/">&lt;Error class: unknown class&gt;</span><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Encodes the given byte array into a Base58 string, appending a checksum at the end.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-327448758%2FFunctions%2F-577215565" anchor-label="encrypt" id="-327448758%2FFunctions%2F-577215565" data-filterable-set=":kodium:dokkaHtml/commonMain"></a>
+          <div class="table-row" data-filterable-current=":kodium:dokkaHtml/commonMain" data-filterable-set=":kodium:dokkaHtml/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="encrypt.html"><span><span>encrypt</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-327448758%2FFunctions%2F-577215565"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kodium:dokkaHtml/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="encrypt.html"><span class="token function">encrypt</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">mySecretKey<span class="token operator">: </span><a href="../-kodium-private-key/index.html">KodiumPrivateKey</a><span class="token punctuation">, </span></span><span class="parameter ">theirPublicKey<span class="token operator">: </span><a href="../-kodium-public-key/index.html">KodiumPublicKey</a><span class="token punctuation">, </span></span><span class="parameter ">data<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html">ByteArray</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="/&amp;lt;Error class: unknown class&amp;gt;///PointingToDeclaration/">&lt;Error class: unknown class&gt;</span><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html">ByteArray</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Encrypts data using the sender's private key and the receiver's public key. The encryption utilizes a secure combination of key pairs, a randomly generated nonce, and the NaCl library for cryptographic operations.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-579624061%2FFunctions%2F-577215565" anchor-label="encryptSymmetric" id="-579624061%2FFunctions%2F-577215565" data-filterable-set=":kodium:dokkaHtml/commonMain"></a>
+          <div class="table-row" data-filterable-current=":kodium:dokkaHtml/commonMain" data-filterable-set=":kodium:dokkaHtml/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="encrypt-symmetric.html"><span>encrypt</span><wbr></wbr><span><span>Symmetric</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-579624061%2FFunctions%2F-577215565"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kodium:dokkaHtml/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="encrypt-symmetric.html"><span class="token function">encryptSymmetric</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">password<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">data<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html">ByteArray</a><span class="token punctuation">, </span></span><span class="parameter ">keyDerivationIterations<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span>PBKDF2_ITERATIONS</span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="/&amp;lt;Error class: unknown class&amp;gt;///PointingToDeclaration/">&lt;Error class: unknown class&gt;</span><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html">ByteArray</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Encrypts the given data using a symmetric encryption algorithm.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1187992499%2FFunctions%2F-577215565" anchor-label="encryptSymmetricToEncodedString" id="1187992499%2FFunctions%2F-577215565" data-filterable-set=":kodium:dokkaHtml/commonMain"></a>
+          <div class="table-row" data-filterable-current=":kodium:dokkaHtml/commonMain" data-filterable-set=":kodium:dokkaHtml/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="encrypt-symmetric-to-encoded-string.html"><span>encrypt</span><wbr></wbr><span>Symmetric</span><wbr></wbr><span>To</span><wbr></wbr><span>Encoded</span><wbr></wbr><span><span>String</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1187992499%2FFunctions%2F-577215565"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kodium:dokkaHtml/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="encrypt-symmetric-to-encoded-string.html"><span class="token function">encryptSymmetricToEncodedString</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">password<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">data<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html">ByteArray</a><span class="token punctuation">, </span></span><span class="parameter ">keyDerivationIterations<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-int/index.html">Int</a><span class="token operator"> = </span>PBKDF2_ITERATIONS</span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="/&amp;lt;Error class: unknown class&amp;gt;///PointingToDeclaration/">&lt;Error class: unknown class&gt;</span><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Encrypts the given data using a symmetric encryption algorithm and encodes the result as a Base58 string with a checksum.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1731111188%2FFunctions%2F-577215565" anchor-label="encryptToEncodedString" id="1731111188%2FFunctions%2F-577215565" data-filterable-set=":kodium:dokkaHtml/commonMain"></a>
+          <div class="table-row" data-filterable-current=":kodium:dokkaHtml/commonMain" data-filterable-set=":kodium:dokkaHtml/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="encrypt-to-encoded-string.html"><span>encrypt</span><wbr></wbr><span>To</span><wbr></wbr><span>Encoded</span><wbr></wbr><span><span>String</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1731111188%2FFunctions%2F-577215565"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kodium:dokkaHtml/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="encrypt-to-encoded-string.html"><span class="token function">encryptToEncodedString</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">mySecretKey<span class="token operator">: </span><a href="../-kodium-private-key/index.html">KodiumPrivateKey</a><span class="token punctuation">, </span></span><span class="parameter ">theirPublicKey<span class="token operator">: </span><a href="../-kodium-public-key/index.html">KodiumPublicKey</a><span class="token punctuation">, </span></span><span class="parameter ">data<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html">ByteArray</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="/&amp;lt;Error class: unknown class&amp;gt;///PointingToDeclaration/">&lt;Error class: unknown class&gt;</span><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Encrypts the given data using the sender's private key and the receiver's public key, and then encodes the encrypted data to a Base58 string with a checksum.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1119096705%2FFunctions%2F-577215565" anchor-label="generateKeyPair" id="1119096705%2FFunctions%2F-577215565" data-filterable-set=":kodium:dokkaHtml/commonMain"></a>
+          <div class="table-row" data-filterable-current=":kodium:dokkaHtml/commonMain" data-filterable-set=":kodium:dokkaHtml/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="generate-key-pair.html"><span>generate</span><wbr></wbr><span>Key</span><wbr></wbr><span><span>Pair</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1119096705%2FFunctions%2F-577215565"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kodium:dokkaHtml/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="generate-key-pair.html"><span class="token function">generateKeyPair</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../-kodium-private-key/index.html">KodiumPrivateKey</a></div><div class="brief "><p class="paragraph">Generates a cryptographic key pair consisting of a public and private key.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-823459795%2FFunctions%2F-577215565" anchor-label="signDetachedToEncodedString" id="-823459795%2FFunctions%2F-577215565" data-filterable-set=":kodium:dokkaHtml/commonMain"></a>
+          <div class="table-row" data-filterable-current=":kodium:dokkaHtml/commonMain" data-filterable-set=":kodium:dokkaHtml/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="sign-detached-to-encoded-string.html"><span>sign</span><wbr></wbr><span>Detached</span><wbr></wbr><span>To</span><wbr></wbr><span>Encoded</span><wbr></wbr><span><span>String</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-823459795%2FFunctions%2F-577215565"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kodium:dokkaHtml/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="sign-detached-to-encoded-string.html"><span class="token function">signDetachedToEncodedString</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">mySecretKey<span class="token operator">: </span><a href="../-kodium-private-key/index.html">KodiumPrivateKey</a><span class="token punctuation">, </span></span><span class="parameter ">data<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html">ByteArray</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="/&amp;lt;Error class: unknown class&amp;gt;///PointingToDeclaration/">&lt;Error class: unknown class&gt;</span><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Signs data using the Ed25519 Secret Key. Returns the detached signature as a Base58 encoded string.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="2145117545%2FFunctions%2F-577215565" anchor-label="verifyDetachedFromEncodedString" id="2145117545%2FFunctions%2F-577215565" data-filterable-set=":kodium:dokkaHtml/commonMain"></a>
+          <div class="table-row" data-filterable-current=":kodium:dokkaHtml/commonMain" data-filterable-set=":kodium:dokkaHtml/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="verify-detached-from-encoded-string.html"><span>verify</span><wbr></wbr><span>Detached</span><wbr></wbr><span>From</span><wbr></wbr><span>Encoded</span><wbr></wbr><span><span>String</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2145117545%2FFunctions%2F-577215565"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":kodium:dokkaHtml/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="verify-detached-from-encoded-string.html"><span class="token function">verifyDetachedFromEncodedString</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">theirPublicKey<span class="token operator">: </span><a href="../-kodium-public-key/index.html">KodiumPublicKey</a><span class="token punctuation">, </span></span><span class="parameter ">data<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html">ByteArray</a><span class="token punctuation">, </span></span><span class="parameter ">signatureB58<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html">String</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div><div class="brief "><p class="paragraph">Verifies a Base58 encoded detached signature against a message.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      <div class="footer">
+        <span class="go-to-top-icon"><a href="#content" id="go-to-top-link"></a></span><span>© 2026 Copyright</span><span
+                class="pull-right"><span>Generated by </span><a
+                href="https://github.com/Kotlin/dokka"><span>dokka</span><span class="padded-icon"></span></a></span>
+      </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

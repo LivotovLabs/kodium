@@ -154,6 +154,50 @@ object Kodium {
         ): Result<ByteArray> {
             return decrypt(mySecretKey, theirPublicKey, data.decodeBase58WithChecksum())
         }
+
+        /**
+         * Signs data using the classical Ed25519 component of the PQC Private Key.
+         * Returns the detached signature as a Base58 encoded string.
+         * Note: This signature is purely classical (Ed25519) as PQC signatures (e.g. ML-DSA) are not yet integrated.
+         */
+        fun signDetachedToEncodedString(mySecretKey: KodiumPqcPrivateKey, data: ByteArray): Result<String> {
+            return Kodium.signDetachedToEncodedString(KodiumPrivateKey.fromRaw(mySecretKey.classicalSecretKey), data)
+        }
+
+        /**
+         * Verifies a Base58 encoded detached signature against a message using the classical Ed25519 public key.
+         */
+        fun verifyDetachedFromEncodedString(theirPublicKey: KodiumPqcPublicKey, data: ByteArray, signatureB58: String): Boolean {
+            return Kodium.verifyDetachedFromEncodedString(KodiumPublicKey(theirPublicKey.classicalPublicKey), data, signatureB58)
+        }
+    }
+
+    /**
+     * Signs data using the Ed25519 Secret Key.
+     * Returns the detached signature as a Base58 encoded string.
+     */
+    fun signDetachedToEncodedString(mySecretKey: KodiumPrivateKey, data: ByteArray): Result<String> {
+        return try {
+            val (_, sk) = nacl.Sign.keyPairFromSeed(mySecretKey.secretKey)
+            val signature = nacl.Sign.signDetached(data, sk)
+            Result.success(signature.encodeToBase58WithChecksum())
+        } catch (err: Throwable) {
+            Result.failure(err)
+        }
+    }
+
+    /**
+     * Verifies a Base58 encoded detached signature against a message.
+     */
+    fun verifyDetachedFromEncodedString(theirPublicKey: KodiumPublicKey, data: ByteArray, signatureB58: String): Boolean {
+        return try {
+            val signature = signatureB58.decodeBase58WithChecksum()
+            // To compute the Ed25519 signature we need an Ed25519 public key.
+            // When we do Verify, theirPublicKey.publicKey is expected to be an Ed25519 public key.
+            nacl.Sign.verifyDetached(signature, data, theirPublicKey.publicKey)
+        } catch (err: Throwable) {
+            false
+        }
     }
 
     /**
@@ -552,9 +596,19 @@ class KodiumPrivateKey private constructor(val secretKey: ByteArray, val publicK
 
     /**
      * Returns the public key component of this key pair.
+     * Note: This returns the X25519 public key used for encryption.
      */
     fun getPublicKey(): KodiumPublicKey {
         return KodiumPublicKey(this.publicKey)
+    }
+
+    /**
+     * Returns the Ed25519 public key component of this key pair, which is derived from the same secret seed.
+     * This public key must be used by other parties to verify your digital signatures.
+     */
+    fun getSignPublicKey(): KodiumPublicKey {
+        val (pk, _) = nacl.Sign.keyPairFromSeed(this.secretKey)
+        return KodiumPublicKey(pk)
     }
 
     /**
@@ -649,6 +703,16 @@ class KodiumPqcPrivateKey private constructor(
     }
 
     fun getPublicKey(): KodiumPqcPublicKey = publicKeyInstance
+
+    /**
+     * Returns the hybrid Post-Quantum public key component of this key pair that must be used for signature verification.
+     * Note: Currently only the classical Ed25519 component is used for signatures.
+     */
+    fun getSignPublicKey(): KodiumPqcPublicKey {
+        val (classicalSignPk, _) = nacl.Sign.keyPairFromSeed(classicalSecretKey)
+        // Keep the same PQC public key for now as PQC signatures are not yet supported
+        return KodiumPqcPublicKey(classicalSignPk, publicKeyInstance.pqcPublicKey)
+    }
 
     fun exportToEncryptedString(password: String, keyDerivationIterations: Int = Kodium.PBKDF2_ITERATIONS): Result<String> {
         return Kodium.encryptSymmetric(password, classicalSecretKey + pqcSecretKey, keyDerivationIterations)

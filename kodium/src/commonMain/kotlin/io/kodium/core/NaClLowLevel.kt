@@ -607,7 +607,7 @@ internal object NaClLowLevel {
         M(p[0], e, f); M(p[1], h, g); M(p[2], g, f); M(p[3], e, h)
     }
     private fun cswap(p: Array<LongArray>, q: Array<LongArray>, b: Int) { for (i in 0 until 4) sel25519(p[i], q[i], b) }
-    private fun pack(r: ByteArray, p: Array<LongArray>) {
+    fun pack(r: ByteArray, p: Array<LongArray>) {
         val tx = LongArray(16); val ty = LongArray(16); val zi = LongArray(16)
         inv25519(zi, p[2]); M(tx, p[0], zi); M(ty, p[1], zi)
         pack25519(r, ty)
@@ -623,16 +623,20 @@ internal object NaClLowLevel {
             cswap(p, q, b)
         }
     }
-    private fun scalarbase(p: Array<LongArray>, s: ByteArray) {
+    fun scalarbase(p: Array<LongArray>, s: ByteArray) {
         val q = Array(4) { LongArray(16) }
         set25519(q[0], X); set25519(q[1], Y); set25519(q[2], gf1)
         M(q[3], X, Y)
         scalarmult(p, q, s)
     }
     fun crypto_sign_keypair(pk: ByteArray, sk: ByteArray): Int {
+        randombytes(sk, 32)
+        return crypto_sign_seed_keypair(pk, sk, sk.sliceArray(0..31))
+    }
+    fun crypto_sign_seed_keypair(pk: ByteArray, sk: ByteArray, seed: ByteArray): Int {
         val d = ByteArray(64)
         val p = Array(4) { LongArray(16) }
-        randombytes(sk, 32)
+        seed.copyInto(sk, 0)
         crypto_hash(d, sk.sliceArray(0..31), 32u)
         d[0] = d[0] and 248.toByte()
         d[31] = d[31] and 127
@@ -719,7 +723,7 @@ internal object NaClLowLevel {
 
         // FIX: Check for failure but do not return early. This is a constant-time pattern.
         var result = neq25519(chk, num)
-        if (par25519(r[0]) != ((p[31].toInt() shr 7) and 1).toByte()) Z(r[0], gf0, r[0])
+        if (par25519(r[0]).toInt() == ((p[31].toInt() shr 7) and 1)) Z(r[0], gf0, r[0])
         M(r[3], r[0], r[1])
         return result
     }

@@ -25,4 +25,21 @@ val classicalKeys = Kodium.generateKeyPair()
 val pqcKeys = Kodium.pqc.generateKeyPair()
 ```
 
-Kodium handles complex operations behind simple APIs. Check out the dedicated sections for Asymmetric Encryption, Symmetric Encryption, Double Ratchet, and Post-Quantum cryptography.
+### Digital Signatures
+Prove authenticity and integrity using detached Ed25519 digital signatures.
+
+```kotlin
+val message = "This message is authentic".encodeToByteArray()
+
+// Sign
+val signatureB58 = Kodium.signDetachedToEncodedString(classicalKeys, message).getOrThrow()
+
+// Verify using the signer's Public Key
+val isValid = Kodium.verifyDetachedFromEncodedString(
+    theirPublicKey = classicalKeys.getSignPublicKey(), 
+    data = message, 
+    signatureB58 = signatureB58
+)
+```
+
+Kodium handles complex operations behind simple APIs. Check out the dedicated sections for Digital Signatures, Asymmetric Encryption, Symmetric Encryption, Double Ratchet, and Post-Quantum cryptography.
