@@ -1,0 +1,8 @@
+//[kodium](../../../index.md)/[io.kodium](../index.md)/[Kodium](index.md)/[verifyDetachedFromEncodedString](verify-detached-from-encoded-string.md)
+
+# verifyDetachedFromEncodedString
+
+[common]\
+fun [verifyDetachedFromEncodedString](verify-detached-from-encoded-string.md)(theirPublicKey: [KodiumPublicKey](../-kodium-public-key/index.md), data: [ByteArray](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-byte-array/index.html), signatureB58: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html)): [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-boolean/index.html)
+
+Verifies a Base58 encoded detached signature against a message.

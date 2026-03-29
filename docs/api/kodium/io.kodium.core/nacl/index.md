@@ -13,6 +13,7 @@ Provides a high-level, safe, and convenient API for the TweetNaCl cryptographic 
 |---|---|
 | [Box](-box/index.md) | [common]<br>object [Box](-box/index.md)<br>Authenticated Public-Key Encryption (box) |
 | [SecretBox](-secret-box/index.md) | [common]<br>object [SecretBox](-secret-box/index.md)<br>Authenticated Symmetric Encryption (secretbox) |
+| [Sign](-sign/index.md) | [common]<br>object [Sign](-sign/index.md)<br>Ed25519 Digital Signatures (Detached) |
 
 ## Functions
 
