@@ -44,6 +44,11 @@ Write once, encrypt everywhere. Even in a post-quantum world.
 
 ## 📝 Release Notes
 
+### v1.0.0-alpha-3
+*   **Advanced Key Management:** Added support for raw, unprotected `ByteArray` exports and imports (`exportToArray()`, `importFromArray()`) across all private keys (`KodiumPrivateKey`, `KodiumPqcPrivateKey`) and E2EE sessions (`DoubleRatchetSession`, `PQDoubleRatchetSession`) to support apps managing their own secure storage.
+*   **High-Performance Persistence:** Introduced `ByteArray` precomputed key support for symmetric encryption and state persistence, allowing developers to bypass PBKDF2 overhead when importing/exporting keys and ratchet sessions.
+*   **Convenience API Additions:** Added `Kodium.generateHighEntropyKey()`, `Kodium.generateRandomSalt()`, and `Kodium.deriveKeyFromPassword()` to simplify symmetric key lifecycle management.
+
 ### v1.0.0-alpha-2
 *   Ed25519 detached signature support
 

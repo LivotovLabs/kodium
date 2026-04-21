@@ -6,7 +6,93 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
+import io.kodium.core.nacl
+
 class KryptokitTest {
+
+    @Test
+    fun testKeyGenWithExportImportWithPrecomputedKey() {
+        val symmetricKey = Kodium.generateHighEntropyKey()
+        val badKey = Kodium.generateHighEntropyKey()
+        val keypair = Kodium.generateKeyPair()
+        val exportedKeyPairString = keypair.exportToEncryptedString(symmetricKey).getOrNull() ?: ""
+
+        val restoreResultWithCorrectKey =
+            KodiumPrivateKey.importFromEncryptedString(exportedKeyPairString, symmetricKey).getOrNull()
+        val restoreResultWithBadKey =
+            KodiumPrivateKey.importFromEncryptedString(exportedKeyPairString, badKey)
+
+        assertContentEquals(
+            expected = keypair.secretKey,
+            actual = restoreResultWithCorrectKey?.secretKey,
+            message = "Private key is not the same after import"
+        )
+
+        assertEquals(
+            expected = keypair.getPublicKey(),
+            actual = restoreResultWithCorrectKey?.getPublicKey(),
+            message = "Public key is not the same after import"
+        )
+
+        assertTrue(
+            restoreResultWithBadKey.isFailure,
+            "Encrypted keypair should fail to restore with wrong key"
+        )
+    }
+
+    @Test
+    fun testKeyGenWithExportImportWithDerivedKey() {
+        val password = "StrongPassword123!"
+        val salt = Kodium.generateRandomSalt()
+        val derivedKey = Kodium.deriveKeyFromPassword(password, salt, 1000)
+        
+        val keypair = Kodium.generateKeyPair()
+        val exportedKeyPairString = keypair.exportToEncryptedString(derivedKey).getOrNull() ?: ""
+
+        val restoredKeypair = KodiumPrivateKey.importFromEncryptedString(exportedKeyPairString, derivedKey).getOrNull()
+
+        assertContentEquals(
+            expected = keypair.secretKey,
+            actual = restoredKeypair?.secretKey,
+            message = "Private key is not the same after import"
+        )
+    }
+
+    @Test
+    fun testSymmetricEncryptionWithPrecomputedKey() {
+        val key = Kodium.generateHighEntropyKey()
+        val data = "Hello precomputed key!".encodeToByteArray()
+        
+        val encrypted = Kodium.encryptSymmetricToEncodedString(key, data).getOrThrow()
+        val decrypted = Kodium.decryptSymmetricFromEncodedString(key, encrypted).getOrThrow()
+        
+        assertContentEquals(data, decrypted)
+        
+        val badKey = Kodium.generateHighEntropyKey()
+        assertTrue(Kodium.decryptSymmetricFromEncodedString(badKey, encrypted).isFailure)
+    }
+
+    @Test
+    fun testKeyGenWithRawExportImport() {
+        val keypair = Kodium.generateKeyPair()
+        val rawArray = keypair.exportToArray()
+        
+        assertEquals(nacl.Box.SecretKeySize, rawArray.size)
+
+        val restoredKeypair = KodiumPrivateKey.importFromArray(rawArray).getOrNull()
+
+        assertContentEquals(
+            expected = keypair.secretKey,
+            actual = restoredKeypair?.secretKey,
+            message = "Private key is not the same after import"
+        )
+
+        assertEquals(
+            expected = keypair.getPublicKey(),
+            actual = restoredKeypair?.getPublicKey(),
+            message = "Public key is not the same after import"
+        )
+    }
 
     @Test
     fun testKeyGenWithExportImportWithCustomPassword() {

@@ -5,7 +5,63 @@ import kotlin.test.Test
 import kotlin.test.assertTrue
 import kotlin.test.assertContentEquals
 
+import io.kodium.core.nacl
+
 class PqcTest {
+
+    @Test
+    fun testPqcKeyExportImportWithPrecomputedKey() {
+        val keys = Kodium.pqc.generateKeyPair()
+        val symmetricKey = Kodium.generateHighEntropyKey()
+        val badKey = Kodium.generateHighEntropyKey()
+
+        val exportedSk = keys.exportToEncryptedString(symmetricKey).getOrThrow()
+        
+        val importedKeys = KodiumPqcPrivateKey.importFromEncryptedString(exportedSk, symmetricKey).getOrThrow()
+        
+        assertContentEquals(keys.classicalSecretKey, importedKeys.classicalSecretKey)
+        assertContentEquals(keys.pqcSecretKey, importedKeys.pqcSecretKey)
+
+        assertTrue(KodiumPqcPrivateKey.importFromEncryptedString(exportedSk, badKey).isFailure)
+    }
+
+    @Test
+    fun testPqcKeyExportImportWithDerivedKey() {
+        val keys = Kodium.pqc.generateKeyPair()
+        
+        val password = "StrongPassword123!"
+        val salt = Kodium.generateRandomSalt()
+        val derivedKey = Kodium.deriveKeyFromPassword(password, salt, 1000)
+
+        val exportedSk = keys.exportToEncryptedString(derivedKey).getOrThrow()
+        val importedKeys = KodiumPqcPrivateKey.importFromEncryptedString(exportedSk, derivedKey).getOrThrow()
+        
+        assertContentEquals(keys.classicalSecretKey, importedKeys.classicalSecretKey)
+        assertContentEquals(keys.pqcSecretKey, importedKeys.pqcSecretKey)
+    }
+
+    @Test
+    fun testPqcSymmetricEncryptionWithPrecomputedKey() {
+        val key = Kodium.generateHighEntropyKey()
+        val data = "Hello PQC precomputed key!".encodeToByteArray()
+        
+        // Note: PQC symmetric encryption uses the same core symmetric engine as non-PQC
+        val encrypted = Kodium.encryptSymmetricToEncodedString(key, data).getOrThrow()
+        val decrypted = Kodium.decryptSymmetricFromEncodedString(key, encrypted).getOrThrow()
+        
+        assertContentEquals(data, decrypted)
+    }
+
+    @Test
+    fun testPqcKeyRawExportImport() {
+        val keys = Kodium.pqc.generateKeyPair()
+        val rawArray = keys.exportToArray()
+        
+        val importedKeys = KodiumPqcPrivateKey.importFromArray(rawArray).getOrThrow()
+        
+        assertContentEquals(keys.classicalSecretKey, importedKeys.classicalSecretKey)
+        assertContentEquals(keys.pqcSecretKey, importedKeys.pqcSecretKey)
+    }
 
     @Test
     fun testPqcKeyGeneration() {

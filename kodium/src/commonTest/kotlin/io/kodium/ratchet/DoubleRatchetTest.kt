@@ -1,5 +1,6 @@
 package io.kodium.ratchet
 
+import io.kodium.Kodium
 import io.kodium.KodiumPrivateKey
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
@@ -154,7 +155,7 @@ class DoubleRatchetTest {
 
         // Alice sends a message
         val msg1 = aliceSession.encryptToEncodedString("Message 1".encodeToByteArray()).getOrThrow()
-        
+
         // Export Alice's session state
         val password = "secure-storage-password"
         val exportedState = aliceSession.exportToEncryptedString(password, 1).getOrThrow()
@@ -164,9 +165,9 @@ class DoubleRatchetTest {
         // Bob receives msg1 and replies
         val dec1 = bobSession.decryptFromEncodedString(msg1).getOrThrow()
         assertEquals("Message 1", dec1.decodeToString())
-        
+
         val msg2 = bobSession.encryptToEncodedString("Message 2".encodeToByteArray()).getOrThrow()
-        
+
         // Restored Alice should be able to decrypt Bob's reply
         val dec2 = restoredAliceSession.decryptFromEncodedString(msg2).getOrThrow()
         assertEquals("Message 2", dec2.decodeToString())
@@ -175,6 +176,63 @@ class DoubleRatchetTest {
         val msg3 = restoredAliceSession.encryptToEncodedString("Message 3".encodeToByteArray()).getOrThrow()
         val dec3 = bobSession.decryptFromEncodedString(msg3).getOrThrow()
         assertEquals("Message 3", dec3.decodeToString())
+    }
+
+    @Test
+    fun testSessionPersistenceWithByteArrayKey() {
+        val sharedSecret = ByteArray(32) { 42 }
+        val bobRatchetKey = KodiumPrivateKey.generate()
+
+        val aliceSession = DoubleRatchetSession.initializeAsInitiator(sharedSecret, bobRatchetKey.publicKey)
+        val bobSession = DoubleRatchetSession.initializeAsResponder(sharedSecret, bobRatchetKey)
+
+        // Alice sends a message
+        val msg1 = aliceSession.encryptToEncodedString("Message 1".encodeToByteArray()).getOrThrow()
+
+        // Export Alice's session state
+        val key = Kodium.generateHighEntropyKey()
+        val exportedState = aliceSession.exportToEncryptedString(key).getOrThrow()
+
+        // Import Alice's session state into a new object
+        val restoredAliceSession = DoubleRatchetSession.importFromEncryptedString(exportedState, key).getOrThrow()
+
+        // Bob receives msg1 and replies
+        val dec1 = bobSession.decryptFromEncodedString(msg1).getOrThrow()
+        assertEquals("Message 1", dec1.decodeToString())
+
+        val msg2 = bobSession.encryptToEncodedString("Message 2".encodeToByteArray()).getOrThrow()
+
+        // Restored Alice should be able to decrypt Bob's reply
+        val dec2 = restoredAliceSession.decryptFromEncodedString(msg2).getOrThrow()
+        assertEquals("Message 2", dec2.decodeToString())
+    }
+
+    @Test
+    fun testSessionPersistenceWithRawArray() {
+        val sharedSecret = ByteArray(32) { 42 }
+        val bobRatchetKey = KodiumPrivateKey.generate()
+
+        val aliceSession = DoubleRatchetSession.initializeAsInitiator(sharedSecret, bobRatchetKey.publicKey)
+        val bobSession = DoubleRatchetSession.initializeAsResponder(sharedSecret, bobRatchetKey)
+
+        // Alice sends a message
+        val msg1 = aliceSession.encryptToEncodedString("Message 1".encodeToByteArray()).getOrThrow()
+
+        // Export Alice's session state
+        val rawState = aliceSession.exportToArray()
+
+        // Import Alice's session state into a new object
+        val restoredAliceSession = DoubleRatchetSession.importFromArray(rawState).getOrThrow()
+
+        // Bob receives msg1 and replies
+        val dec1 = bobSession.decryptFromEncodedString(msg1).getOrThrow()
+        assertEquals("Message 1", dec1.decodeToString())
+
+        val msg2 = bobSession.encryptToEncodedString("Message 2".encodeToByteArray()).getOrThrow()
+
+        // Restored Alice should be able to decrypt Bob's reply
+        val dec2 = restoredAliceSession.decryptFromEncodedString(msg2).getOrThrow()
+        assertEquals("Message 2", dec2.decodeToString())
     }
 
     @Test

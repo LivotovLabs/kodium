@@ -36,12 +36,21 @@ Keys are exported as Base58-encoded strings with checksums for easy storage.
 // Export Public Key (Safe to share)
 val b58Pk: String = myPublicKey.exportToEncodedString()
 
-// Export Private Key (Encrypted with a password)
+// Export Private Key (Encrypted with a string password)
 val b58Sk: String = myKeys.exportToEncryptedString("your-secure-password").getOrThrow()
+
+// Export Private Key (Encrypted with a fast, precomputed ByteArray key)
+val storageKey: ByteArray = Kodium.generateHighEntropyKey()
+val b58FastSk: String = myKeys.exportToEncryptedString(storageKey).getOrThrow()
+
+// Export Raw Private Key (Unprotected - Use only if your app manages secure storage encryption!)
+val rawPrivKey: ByteArray = myKeys.exportToArray()
 
 // Import back
 val importedPk = KodiumPqcPublicKey.importFromEncodedString(b58Pk).getOrThrow()
 val importedSk = KodiumPqcPrivateKey.importFromEncryptedString(b58Sk, "your-secure-password").getOrThrow()
+val importedFastSk = KodiumPqcPrivateKey.importFromEncryptedString(b58FastSk, storageKey).getOrThrow()
+val importedRawSk = KodiumPqcPrivateKey.importFromArray(rawPrivKey).getOrThrow()
 ```
 
 **Key Size Reference:**

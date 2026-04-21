@@ -180,4 +180,89 @@ class PQDoubleRatchetTest {
         val dec4 = restoredAliceSession.decryptFromEncodedString(enc4).getOrThrow()
         assertEquals("Yes, state restored successfully.", dec4.decodeToString())
     }
+
+    @Test
+    fun testSessionSerializationWithByteArrayKey() {
+        val aliceIdentityKey = Kodium.generateKeyPair()
+        val alicePqcKey = fastGeneratePqcKey()
+        val bobIdentityKey = Kodium.generateKeyPair()
+        val bobPqcKey = fastGeneratePqcKey()
+
+        val bobBundle = PQXDH.PublicBundle(bobIdentityKey.getPublicKey(), bobPqcKey.getPublicKey())
+        val aliceSharedSecret = PQXDH.calculateSecretAsInitiator(aliceIdentityKey, alicePqcKey, bobBundle)
+        val aliceSession = PQDoubleRatchetSession.initializeAsInitiator(
+            aliceSharedSecret.masterSecret, bobBundle.pqcKey, alicePqcKey
+        )
+        val bobSharedSecret = PQXDH.calculateSecretAsResponder(
+            bobIdentityKey, bobPqcKey, aliceSharedSecret.encapsulationPayload
+        )
+        val bobSession = PQDoubleRatchetSession.initializeAsResponder(
+            bobSharedSecret, bobPqcKey, aliceSharedSecret.encapsulationPayload.pqcPublicKey!!
+        )
+
+        // Do a couple of exchanges to advance state
+        val enc1 = aliceSession.encryptToEncodedString("Hello".encodeToByteArray()).getOrThrow()
+        bobSession.decryptFromEncodedString(enc1).getOrThrow()
+        val enc2 = bobSession.encryptToEncodedString("World".encodeToByteArray()).getOrThrow()
+        aliceSession.decryptFromEncodedString(enc2).getOrThrow()
+
+        // Serialize Alice's state
+        val password = "StrongPassword123!"
+        val salt = Kodium.generateRandomSalt()
+        val derivedKey = Kodium.deriveKeyFromPassword(password, salt, 1000)
+        val exportedState = aliceSession.exportToEncryptedString(derivedKey).getOrThrow()
+
+        // Deserialize
+        val restoredAliceSession = PQDoubleRatchetSession.importFromEncryptedString(exportedState, derivedKey).getOrThrow()
+
+        // Verify restored session works seamlessly with Bob's existing session
+        val enc3 = restoredAliceSession.encryptToEncodedString("Can you hear me now?".encodeToByteArray()).getOrThrow()
+        val dec3 = bobSession.decryptFromEncodedString(enc3).getOrThrow()
+        assertEquals("Can you hear me now?", dec3.decodeToString())
+
+        val enc4 = bobSession.encryptToEncodedString("Yes, state restored successfully.".encodeToByteArray()).getOrThrow()
+        val dec4 = restoredAliceSession.decryptFromEncodedString(enc4).getOrThrow()
+        assertEquals("Yes, state restored successfully.", dec4.decodeToString())
+    }
+
+    @Test
+    fun testSessionSerializationWithRawArray() {
+        val aliceIdentityKey = Kodium.generateKeyPair()
+        val alicePqcKey = fastGeneratePqcKey()
+        val bobIdentityKey = Kodium.generateKeyPair()
+        val bobPqcKey = fastGeneratePqcKey()
+
+        val bobBundle = PQXDH.PublicBundle(bobIdentityKey.getPublicKey(), bobPqcKey.getPublicKey())
+        val aliceSharedSecret = PQXDH.calculateSecretAsInitiator(aliceIdentityKey, alicePqcKey, bobBundle)
+        val aliceSession = PQDoubleRatchetSession.initializeAsInitiator(
+            aliceSharedSecret.masterSecret, bobBundle.pqcKey, alicePqcKey
+        )
+        val bobSharedSecret = PQXDH.calculateSecretAsResponder(
+            bobIdentityKey, bobPqcKey, aliceSharedSecret.encapsulationPayload
+        )
+        val bobSession = PQDoubleRatchetSession.initializeAsResponder(
+            bobSharedSecret, bobPqcKey, aliceSharedSecret.encapsulationPayload.pqcPublicKey!!
+        )
+
+        // Do a couple of exchanges to advance state
+        val enc1 = aliceSession.encryptToEncodedString("Hello".encodeToByteArray()).getOrThrow()
+        bobSession.decryptFromEncodedString(enc1).getOrThrow()
+        val enc2 = bobSession.encryptToEncodedString("World".encodeToByteArray()).getOrThrow()
+        aliceSession.decryptFromEncodedString(enc2).getOrThrow()
+
+        // Serialize Alice's state
+        val rawState = aliceSession.exportToArray()
+
+        // Deserialize
+        val restoredAliceSession = PQDoubleRatchetSession.importFromArray(rawState).getOrThrow()
+
+        // Verify restored session works seamlessly with Bob's existing session
+        val enc3 = restoredAliceSession.encryptToEncodedString("Can you hear me now?".encodeToByteArray()).getOrThrow()
+        val dec3 = bobSession.decryptFromEncodedString(enc3).getOrThrow()
+        assertEquals("Can you hear me now?", dec3.decodeToString())
+
+        val enc4 = bobSession.encryptToEncodedString("Yes, state restored successfully.".encodeToByteArray()).getOrThrow()
+        val dec4 = restoredAliceSession.decryptFromEncodedString(enc4).getOrThrow()
+        assertEquals("Yes, state restored successfully.", dec4.decodeToString())
+    }
 }

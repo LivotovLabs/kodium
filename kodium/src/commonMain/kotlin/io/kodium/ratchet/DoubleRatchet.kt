@@ -228,6 +228,31 @@ class DoubleRatchetSession private constructor(
          */
         fun importFromEncryptedString(data: String, password: String, keyDerivationIterations: Int = io.kodium.Kodium.PBKDF2_ITERATIONS): Result<DoubleRatchetSession> {
             return io.kodium.Kodium.decryptSymmetricFromEncodedString(password, data, keyDerivationIterations).mapCatching { bytes ->
+                importFromArray(bytes).getOrThrow()
+            }
+        }
+
+        /**
+         * Safely imports a previously saved Double Ratchet Session from an encrypted, Base58-encoded string.
+         *
+         * @param data The encrypted, Base58-encoded session state string.
+         * @param key A precomputed 32-byte symmetric key used to encrypt the session state during export.
+         * @return A `Result` containing the restored [DoubleRatchetSession], or an error if decryption/parsing fails.
+         */
+        fun importFromEncryptedString(data: String, key: ByteArray): Result<DoubleRatchetSession> {
+            return io.kodium.Kodium.decryptSymmetricFromEncodedString(key, data).mapCatching { bytes ->
+                importFromArray(bytes).getOrThrow()
+            }
+        }
+
+        /**
+         * Imports a Double Ratchet Session from a raw, unprotected ByteArray.
+         *
+         * @param bytes The unencrypted serialized state of the session.
+         * @return A `Result` containing the restored [DoubleRatchetSession], or an error if parsing fails.
+         */
+        fun importFromArray(bytes: ByteArray): Result<DoubleRatchetSession> {
+            return runCatching {
                 val reader = ByteReader(bytes)
                 
                 val dhs = KodiumPrivateKey.fromRaw(reader.readBytes(32))
@@ -295,53 +320,78 @@ class DoubleRatchetSession private constructor(
      */
     fun exportToEncryptedString(password: String, keyDerivationIterations: Int = io.kodium.Kodium.PBKDF2_ITERATIONS): Result<String> {
         return try {
-            val writer = ByteWriter()
-            writer.write(DHs.secretKey)
-            
-            if (DHr != null) {
-                writer.write(1.toByte())
-                writer.write(DHr!!)
-            } else {
-                writer.write(0.toByte())
-            }
-            
-            writer.write(RK)
-            
-            if (CKs != null) {
-                writer.write(1.toByte())
-                writer.write(CKs!!)
-            } else {
-                writer.write(0.toByte())
-            }
-            
-            if (CKr != null) {
-                writer.write(1.toByte())
-                writer.write(CKr!!)
-            } else {
-                writer.write(0.toByte())
-            }
-            
-            writer.writeInt(Ns)
-            writer.writeInt(Nr)
-            writer.writeInt(PN)
-            
-            writer.writeInt(MKSKIPPED.size)
-            for ((key, value) in MKSKIPPED) {
-                val keyBytes = key.encodeToByteArray()
-                writer.writeInt(keyBytes.size)
-                writer.write(keyBytes)
-                writer.write(value)
-            }
-
-            writer.writeInt(applicationInfo.size)
-            writer.write(applicationInfo)
-            
-            writer.writeInt(maxSkippedMessages)
-            
-            io.kodium.Kodium.encryptSymmetricToEncodedString(password, writer.toByteArray(), keyDerivationIterations)
+            io.kodium.Kodium.encryptSymmetricToEncodedString(password, exportToArray(), keyDerivationIterations)
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    /**
+     * Exports the entire internal state of the current session to a securely encrypted, Base58-encoded string
+     * using a precomputed symmetric key.
+     * 
+     * @param key A precomputed 32-byte symmetric key used to encrypt the exported state.
+     * @return A `Result` containing the Base58-encoded string on success.
+     */
+    fun exportToEncryptedString(key: ByteArray): Result<String> {
+        return try {
+            io.kodium.Kodium.encryptSymmetricToEncodedString(key, exportToArray())
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Exports the raw, unprotected internal state of the session to a ByteArray.
+     * This is useful when the application manages its own state encryption or storage protection.
+     * 
+     * @return A ByteArray containing the serialized internal state.
+     */
+    fun exportToArray(): ByteArray {
+        val writer = ByteWriter()
+        writer.write(DHs.secretKey)
+        
+        if (DHr != null) {
+            writer.write(1.toByte())
+            writer.write(DHr!!)
+        } else {
+            writer.write(0.toByte())
+        }
+        
+        writer.write(RK)
+        
+        if (CKs != null) {
+            writer.write(1.toByte())
+            writer.write(CKs!!)
+        } else {
+            writer.write(0.toByte())
+        }
+        
+        if (CKr != null) {
+            writer.write(1.toByte())
+            writer.write(CKr!!)
+        } else {
+            writer.write(0.toByte())
+        }
+        
+        writer.writeInt(Ns)
+        writer.writeInt(Nr)
+        writer.writeInt(PN)
+        
+        writer.writeInt(MKSKIPPED.size)
+        for ((key, value) in MKSKIPPED) {
+            val keyBytes = key.encodeToByteArray()
+            writer.writeInt(keyBytes.size)
+            writer.write(keyBytes)
+            writer.write(value)
+        }
+
+        writer.writeInt(applicationInfo.size)
+        writer.write(applicationInfo)
+        
+        writer.writeInt(maxSkippedMessages)
+        
+        return writer.toByteArray()
     }
 
     private fun kdfRk(rk: ByteArray, dhOut: ByteArray): Pair<ByteArray, ByteArray> {

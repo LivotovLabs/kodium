@@ -17,7 +17,44 @@ import io.kodium.ratchet.HKDF
 object Kodium {
 
     const val PBKDF2_ITERATIONS = 600_000 // A reasonable minimum. Increase for more security.
-    private const val SALT_SIZE_BYTES = 16
+    const val SALT_SIZE_BYTES = 16
+
+    /**
+     * Generates a high-entropy, random symmetric key.
+     * This key can be used for operations requiring a precomputed ByteArray key.
+     *
+     * @return A securely generated 32-byte (256-bit) array.
+     */
+    fun generateHighEntropyKey(): ByteArray {
+        return nacl.randomBytes(nacl.SecretBox.KeySize)
+    }
+
+    /**
+     * Generates a high-entropy, random salt to be used with key derivation functions (like PBKDF2).
+     * The generated salt should be stored (usually alongside the encrypted data) to allow key reconstruction later.
+     *
+     * @return A securely generated 16-byte random array.
+     */
+    fun generateRandomSalt(): ByteArray {
+        return nacl.randomBytes(SALT_SIZE_BYTES)
+    }
+
+    /**
+     * Derives a symmetric key from a password and a salt using PBKDF2.
+     * 
+     * @param password The user-provided password.
+     * @param salt The salt used for derivation. Must be securely stored alongside the encrypted data or randomly generated and preserved if derivation must be repeated.
+     * @param keyDerivationIterations The number of PBKDF2 iterations to use.
+     * @return A derived 32-byte (256-bit) symmetric key.
+     */
+    fun deriveKeyFromPassword(password: String, salt: ByteArray, keyDerivationIterations: Int = PBKDF2_ITERATIONS): ByteArray {
+        return KDF.deriveKey(
+            password = password.encodeToByteArray(),
+            salt = salt,
+            iterations = keyDerivationIterations,
+            keyLengthBytes = nacl.SecretBox.KeySize
+        )
+    }
 
     /**
      * Post-Quantum Cryptography (PQC) operations.
@@ -347,6 +384,17 @@ object Kodium {
     }
 
     /**
+     * Encrypts the given data using a symmetric encryption algorithm with a precomputed key and encodes the result as a Base58 string with a checksum.
+     *
+     * @param key The precomputed symmetric key (must be exactly 32 bytes).
+     * @param data The data to be encrypted, provided as a byte array.
+     * @return A `Result` object that contains the Base58-encoded string on successful encryption, or an error if the encryption fails.
+     */
+    fun encryptSymmetricToEncodedString(key: ByteArray, data: ByteArray): Result<String> {
+        return encryptSymmetric(key, data).mapCatching { it.encodeToBase58WithChecksum() }
+    }
+
+    /**
      * Encrypts the given data using a symmetric encryption algorithm.
      *
      * **Post-Quantum Security:** Symmetric encryption using 256-bit keys and XSalsa20
@@ -400,6 +448,40 @@ object Kodium {
     }
 
     /**
+     * Encrypts the given data using a symmetric encryption algorithm with a precomputed key.
+     *
+     * This method generates a unique nonce for every encryption process
+     * and encrypts the data with the provided key and the nonce using a secret box encryption mechanism.
+     *
+     * @param key The precomputed symmetric key (must be exactly 32 bytes).
+     * @param data The data to be encrypted, provided as a byte array.
+     * @return A `Result` object containing the encrypted byte array on success (nonce and encrypted message concatenated),
+     *         or an error in case the encryption process fails.
+     */
+    fun encryptSymmetric(key: ByteArray, data: ByteArray): Result<ByteArray> {
+        return try {
+            if (key.size != nacl.SecretBox.KeySize) {
+                return Result.failure(Error("Invalid key size. Must be ${nacl.SecretBox.KeySize} bytes."))
+            }
+
+            // Generate a nonce for the encryption itself
+            val nonce = nacl.randomBytes(nacl.SecretBox.NonceSize)
+
+            // Encrypt the data
+            val box = nacl.SecretBox.seal(
+                message = data,
+                nonce = nonce,
+                key = key
+            )
+
+            // Return the combined output: [nonce][box]
+            Result.success(nonce + box)
+        } catch (err: Throwable) {
+            Result.failure(err)
+        }
+    }
+
+    /**
      * Decrypts an encoded Base58 string that was encrypted using symmetric encryption.
      *
      * This function first decodes the input string from Base58 with checksum verification. Then,
@@ -413,6 +495,18 @@ object Kodium {
      */
     fun decryptSymmetricFromEncodedString(password: String, data: String, keyDerivationIterations: Int = PBKDF2_ITERATIONS): Result<ByteArray> {
         return decryptSymmetric(password, data.decodeBase58WithChecksum(), keyDerivationIterations)
+    }
+
+    /**
+     * Decrypts an encoded Base58 string that was encrypted using symmetric encryption with a precomputed key.
+     *
+     * @param key The precomputed symmetric key (must be exactly 32 bytes).
+     * @param data The Base58-encoded string containing the encrypted data with a checksum.
+     * @return A `Result` object containing the decrypted data as a `ByteArray` on success,
+     *         or an error on failure.
+     */
+    fun decryptSymmetricFromEncodedString(key: ByteArray, data: String): Result<ByteArray> {
+        return decryptSymmetric(key, data.decodeBase58WithChecksum())
     }
 
     /**
@@ -465,6 +559,45 @@ object Kodium {
                 Result.success(res)
             } else {
                 Result.failure(Error("Failed to decrypt data, check your password or cipher and try again"))
+            }
+        } catch (err: Throwable) {
+            Result.failure(err)
+        }
+    }
+
+    /**
+     * Decrypts a byte array that was encrypted using symmetric encryption with a precomputed key.
+     *
+     * @param key The precomputed symmetric key (must be exactly 32 bytes).
+     * @param cipher The encrypted data, which consists of the nonce followed by the encrypted message.
+     * @return A `Result` object containing the decrypted byte array on success, or an error on failure.
+     */
+    fun decryptSymmetric(key: ByteArray, cipher: ByteArray): Result<ByteArray> {
+        return try {
+            if (key.size != nacl.SecretBox.KeySize) {
+                return Result.failure(Error("Invalid key size. Must be ${nacl.SecretBox.KeySize} bytes."))
+            }
+
+            val minSize = nacl.SecretBox.NonceSize + nacl.SecretBox.MacSize
+            if (cipher.size < minSize) {
+                return Result.failure(Error("Invalid cipher size"))
+            }
+
+            // Deconstruct the combined cipher: [nonce][box]
+            val nonce = cipher.copyOfRange(0, nacl.SecretBox.NonceSize)
+            val box = cipher.copyOfRange(nacl.SecretBox.NonceSize, cipher.size)
+
+            // Decrypt the box
+            val res = nacl.SecretBox.open(
+                box = box,
+                nonce = nonce,
+                key = key
+            )
+
+            if (res != null) {
+                Result.success(res)
+            } else {
+                Result.failure(Error("Failed to decrypt data, check your key or cipher and try again"))
             }
         } catch (err: Throwable) {
             Result.failure(err)
@@ -592,6 +725,26 @@ class KodiumPrivateKey private constructor(val secretKey: ByteArray, val publicK
             return Kodium.decryptSymmetric(password, data.decodeBase58WithChecksum(), keyDerivationIterations)
                 .mapCatching { rawSecretKey -> fromRaw(rawSecretKey) }
         }
+
+        /**
+         * Imports a private key from an encrypted, Base58-encoded string.
+         * A precomputed symmetric key MUST be provided.
+         */
+        fun importFromEncryptedString(data: String, key: ByteArray): Result<KodiumPrivateKey> {
+            return Kodium.decryptSymmetric(key, data.decodeBase58WithChecksum())
+                .mapCatching { rawSecretKey -> fromRaw(rawSecretKey) }
+        }
+
+        /**
+         * Imports a private key from a raw, unprotected ByteArray.
+         */
+        fun importFromArray(data: ByteArray): Result<KodiumPrivateKey> {
+            return try {
+                Result.success(fromRaw(data))
+            } catch (err: Throwable) {
+                Result.failure(err)
+            }
+        }
     }
 
     /**
@@ -618,6 +771,23 @@ class KodiumPrivateKey private constructor(val secretKey: ByteArray, val publicK
     fun exportToEncryptedString(password: String, keyDerivationIterations: Int = Kodium.PBKDF2_ITERATIONS): Result<String> {
         return Kodium.encryptSymmetric(password, this.secretKey, keyDerivationIterations)
             .mapCatching { it.encodeToBase58WithChecksum() }
+    }
+
+    /**
+     * Exports the private key to an encrypted, Base58-encoded string.
+     * A precomputed symmetric key MUST be provided.
+     */
+    fun exportToEncryptedString(key: ByteArray): Result<String> {
+        return Kodium.encryptSymmetric(key, this.secretKey)
+            .mapCatching { it.encodeToBase58WithChecksum() }
+    }
+
+    /**
+     * Exports the raw private key material to an unprotected ByteArray.
+     * This is useful when the application using Kodium manages its own encryption or key protection.
+     */
+    fun exportToArray(): ByteArray {
+        return secretKey.copyOf()
     }
 
     // equals and hashCode should now consider both keys if available,
@@ -685,12 +855,42 @@ class KodiumPqcPrivateKey private constructor(
             )
         }
 
+        /**
+         * Imports a PQC private key from an encrypted, Base58-encoded string.
+         * A password MUST be provided.
+         */
         fun importFromEncryptedString(data: String, password: String, keyDerivationIterations: Int = Kodium.PBKDF2_ITERATIONS): Result<KodiumPqcPrivateKey> {
             return Kodium.decryptSymmetric(password, data.decodeBase58WithChecksum(), keyDerivationIterations).mapCatching { material ->
                 val classicalSk = material.copyOfRange(0, nacl.Box.SecretKeySize)
                 val pqcSk = material.copyOfRange(nacl.Box.SecretKeySize, material.size)
 
                 fromRaw(classicalSk, pqcSk)
+            }
+        }
+
+        /**
+         * Imports a PQC private key from an encrypted, Base58-encoded string.
+         * A precomputed symmetric key MUST be provided.
+         */
+        fun importFromEncryptedString(data: String, key: ByteArray): Result<KodiumPqcPrivateKey> {
+            return Kodium.decryptSymmetric(key, data.decodeBase58WithChecksum()).mapCatching { material ->
+                val classicalSk = material.copyOfRange(0, nacl.Box.SecretKeySize)
+                val pqcSk = material.copyOfRange(nacl.Box.SecretKeySize, material.size)
+
+                fromRaw(classicalSk, pqcSk)
+            }
+        }
+
+        /**
+         * Imports a PQC private key from a raw, unprotected ByteArray.
+         */
+        fun importFromArray(data: ByteArray): Result<KodiumPqcPrivateKey> {
+            return try {
+                val classicalSk = data.copyOfRange(0, nacl.Box.SecretKeySize)
+                val pqcSk = data.copyOfRange(nacl.Box.SecretKeySize, data.size)
+                Result.success(fromRaw(classicalSk, pqcSk))
+            } catch (err: Throwable) {
+                Result.failure(err)
             }
         }
 
@@ -714,9 +914,30 @@ class KodiumPqcPrivateKey private constructor(
         return KodiumPqcPublicKey(classicalSignPk, publicKeyInstance.pqcPublicKey)
     }
 
+    /**
+     * Exports the PQC private key to an encrypted, Base58-encoded string.
+     * A password MUST be provided.
+     */
     fun exportToEncryptedString(password: String, keyDerivationIterations: Int = Kodium.PBKDF2_ITERATIONS): Result<String> {
         return Kodium.encryptSymmetric(password, classicalSecretKey + pqcSecretKey, keyDerivationIterations)
             .mapCatching { it.encodeToBase58WithChecksum() }
+    }
+
+    /**
+     * Exports the PQC private key to an encrypted, Base58-encoded string.
+     * A precomputed symmetric key MUST be provided.
+     */
+    fun exportToEncryptedString(key: ByteArray): Result<String> {
+        return Kodium.encryptSymmetric(key, classicalSecretKey + pqcSecretKey)
+            .mapCatching { it.encodeToBase58WithChecksum() }
+    }
+
+    /**
+     * Exports the raw PQC private key material to an unprotected ByteArray.
+     * This is useful when the application using Kodium manages its own encryption or key protection.
+     */
+    fun exportToArray(): ByteArray {
+        return classicalSecretKey + pqcSecretKey
     }
 
     override fun equals(other: Any?): Boolean {
