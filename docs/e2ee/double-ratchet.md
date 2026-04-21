@@ -201,6 +201,13 @@ val storagePassword = "my-super-secure-storage-password"
 // Export the session state into an encrypted string
 val serializedSession = aliceSession.exportToEncryptedString(storagePassword).getOrThrow()
 
+// Export using a fast, precomputed ByteArray key (bypasses PBKDF2)
+val storageKey = Kodium.generateHighEntropyKey()
+val fastSerializedSession = aliceSession.exportToEncryptedString(storageKey).getOrThrow()
+
+// Export as an unprotected ByteArray (Use ONLY if your app already manages secure storage encryption!)
+val rawSessionData: ByteArray = aliceSession.exportToArray()
+
 // Save `serializedSession` to your local database (e.g., SharedPreferences, Room, CoreData)
 println("Saved session: $serializedSession")
 
@@ -215,6 +222,15 @@ val restoredAliceSession = DoubleRatchetSession.importFromEncryptedString(
     data = loadedSessionString,
     password = storagePassword
 ).getOrThrow()
+
+// Or restore using your precomputed key
+val fastRestoredSession = DoubleRatchetSession.importFromEncryptedString(
+    data = fastSerializedSession, 
+    key = storageKey
+).getOrThrow()
+
+// Or restore from the raw ByteArray
+val rawRestoredSession = DoubleRatchetSession.importFromArray(rawSessionData).getOrThrow()
 
 // The restored session is ready to encrypt and decrypt messages right where it left off
 val newMessage = restoredAliceSession.encryptToEncodedString("I'm back!".encodeToByteArray()).getOrThrow()
