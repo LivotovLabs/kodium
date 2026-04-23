@@ -6,9 +6,7 @@ Digital signatures prove that a message was created by a known sender (authentic
 
 ## Key Pairs
 
-Kodium uses a unified seed strategy. When you generate a standard `KodiumPrivateKey` or a hybrid `KodiumPqcPrivateKey`, the same underlying secret seed can be used to perform X25519 Encryption (Box) or Ed25519 Digital Signatures. 
-
-However, because X25519 and Ed25519 use different curve coordinates mathematically, they have different Public Keys. To verify a signature, you must provide the signer's **Signing Public Key**, not their encryption key.
+Kodium uses a unified key strategy. When you generate a standard `KodiumPrivateKey` or a hybrid `KodiumPqcPrivateKey`, the `getPublicKey()` method returns a unified public key object. This object automatically contains both the X25519 Encryption key and the Ed25519 Digital Signature key. You simply pass this single unified public key object to any verification method.
 
 ## Creating a Detached Signature
 
@@ -33,20 +31,20 @@ println("Signature: $signatureBase58")
 To verify a message, the recipient needs:
 1. The exact same message bytes.
 2. The Base58 encoded signature.
-3. The sender's **Signing Public Key**.
+3. The sender's unified **Public Key**.
 
 ```kotlin
 import io.kodium.Kodium
 
-// ... Assume the recipient receives the message, signatureBase58, and knows the sender's signing key
+// ... Assume the recipient receives the message, signatureBase58, and knows the sender's public key
 
-// 1. Obtain the sender's signing public key (this is critical!)
-// The sender can export it via: myPrivateKey.getSignPublicKey().exportToEncodedString()
-val theirSignPublicKey = myPrivateKey.getSignPublicKey() 
+// 1. Obtain the sender's unified public key
+// The sender can export it via: myPrivateKey.getPublicKey().exportToEncodedString()
+val theirPublicKey = myPrivateKey.getPublicKey() 
 
 // 2. Verify the signature against the message
 val isValid = Kodium.verifyDetachedFromEncodedString(
-    theirPublicKey = theirSignPublicKey,
+    theirPublicKey = theirPublicKey,
     data = message,
     signatureB58 = signatureBase58
 )
@@ -67,9 +65,9 @@ if (isValid) {
 val pqcKeyPair = Kodium.pqc.generateKeyPair()
 val pqcSignatureResult = Kodium.pqc.signDetachedToEncodedString(pqcKeyPair, message)
 
-// Verifying works identically, using the pqcKeyPair.getSignPublicKey()
+// Verifying works identically, using the pqcKeyPair.getPublicKey()
 val isValid = Kodium.pqc.verifyDetachedFromEncodedString(
-    theirPublicKey = pqcKeyPair.getSignPublicKey(),
+    theirPublicKey = pqcKeyPair.getPublicKey(),
     data = message,
     signatureB58 = pqcSignatureResult.getOrThrow()
 )

@@ -81,7 +81,8 @@ class ReadmeExampleTest {
         // Verify keys match
         val restored = restoredKeyPair.getOrThrow()
         assertTrue(restored.secretKey.contentEquals(keyPair.secretKey), "Restored secret key doesn't match")
-        assertTrue(restored.getPublicKey().publicKey.contentEquals(keyPair.getPublicKey().publicKey), "Restored public key doesn't match")
+        assertTrue(restored.getPublicKey().encryptionKey.contentEquals(keyPair.getPublicKey().encryptionKey), "Restored encryption key doesn't match")
+        assertTrue(restored.getPublicKey().signingKey.contentEquals(keyPair.getPublicKey().signingKey), "Restored signing key doesn't match")
     }
 
     @Test

@@ -18,14 +18,14 @@ class DoubleRatchetPropertyTest {
         val aliceEphemeralKey = KodiumPrivateKey.generate()
         val bobIdentityKey = KodiumPrivateKey.generate()
         val bobSignedPreKey = KodiumPrivateKey.generate()
-        val bobBundle = X3DH.PublicBundle(bobIdentityKey.publicKey, bobSignedPreKey.publicKey)
+        val bobBundle = X3DH.PublicBundle(bobIdentityKey.getPublicKey(), bobSignedPreKey.getPublicKey())
 
         val secret1 = X3DH.calculateSecretAsInitiator(aliceIdentityKey, aliceEphemeralKey, bobBundle)
         val secret2 = X3DH.calculateSecretAsResponder(
-            bobIdentityKey, bobSignedPreKey, null, aliceIdentityKey.publicKey, aliceEphemeralKey.publicKey
+            bobIdentityKey, bobSignedPreKey, null, aliceIdentityKey.getPublicKey(), aliceEphemeralKey.getPublicKey()
         )
 
-        val alice = DoubleRatchetSession.initializeAsInitiator(secret1, bobSignedPreKey.publicKey)
+        val alice = DoubleRatchetSession.initializeAsInitiator(secret1, bobSignedPreKey.getPublicKey())
         val bob = DoubleRatchetSession.initializeAsResponder(secret2, bobSignedPreKey)
 
         Pair(alice, bob)

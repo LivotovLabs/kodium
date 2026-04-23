@@ -70,12 +70,12 @@ class KodiumSignTest {
         val signatureB58 = signatureResult.getOrThrow()
         
         // Verify
-        val isValid = Kodium.verifyDetachedFromEncodedString(keyPair.getSignPublicKey(), message, signatureB58)
+        val isValid = Kodium.verifyDetachedFromEncodedString(keyPair.getPublicKey(), message, signatureB58)
         assertTrue(isValid, "High-level detached signature verification failed")
         
         // Tamper test (modify message)
         val tamperedMessage = "Hello, Kodium! High Level? ".encodeToByteArray()
-        val isTamperedValid = Kodium.verifyDetachedFromEncodedString(keyPair.getSignPublicKey(), tamperedMessage, signatureB58)
+        val isTamperedValid = Kodium.verifyDetachedFromEncodedString(keyPair.getPublicKey(), tamperedMessage, signatureB58)
         assertFalse(isTamperedValid, "Tampered message should fail verification")
 
         // Tamper test (modify signature string)
@@ -83,8 +83,30 @@ class KodiumSignTest {
         signatureBytes[0] = (signatureBytes[0].toInt() xor 1).toByte()
         val tamperedSignatureB58 = signatureBytes.encodeToBase58WithChecksum()
         
-        val isTamperedSigValid = Kodium.verifyDetachedFromEncodedString(keyPair.getSignPublicKey(), message, tamperedSignatureB58)
+        val isTamperedSigValid = Kodium.verifyDetachedFromEncodedString(keyPair.getPublicKey(), message, tamperedSignatureB58)
         assertFalse(isTamperedSigValid, "Tampered signature should fail verification")
+    }
+
+    @Test
+    fun testHighLevelSignAndVerifyWithDefaultPublicKey() {
+        val kp = Kodium.generateKeyPair()
+        val data = "header.payload".encodeToByteArray()
+        val sig = Kodium.signDetachedToEncodedString(kp, data).getOrThrow()
+
+        // This ensures that the default public key (from getPublicKey()) can be used for verification
+        val isValid = Kodium.verifyDetachedFromEncodedString(kp.getPublicKey(), data, sig)
+        assertTrue(isValid, "Classical high-level detached signature verification failed with getPublicKey()")
+    }
+
+    @Test
+    fun testHighLevelPqcSignAndVerifyWithDefaultPublicKey() {
+        val kp = Kodium.pqc.generateKeyPair()
+        val data = "header.payload".encodeToByteArray()
+        val sig = Kodium.pqc.signDetachedToEncodedString(kp, data).getOrThrow()
+
+        // This ensures that the default public key (from getPublicKey()) can be used for verification
+        val isValid = Kodium.pqc.verifyDetachedFromEncodedString(kp.getPublicKey(), data, sig)
+        assertTrue(isValid, "PQC high-level detached signature verification failed with getPublicKey()")
     }
 
     @Test
@@ -100,12 +122,12 @@ class KodiumSignTest {
         val signatureB58 = signatureResult.getOrThrow()
         
         // Verify
-        val isValid = Kodium.pqc.verifyDetachedFromEncodedString(keyPair.getSignPublicKey(), message, signatureB58)
+        val isValid = Kodium.pqc.verifyDetachedFromEncodedString(keyPair.getPublicKey(), message, signatureB58)
         assertTrue(isValid, "PQC high-level detached signature verification failed")
         
         // Tamper test (modify message)
         val tamperedMessage = "Hello, Kodium! PQC Level? ".encodeToByteArray()
-        val isTamperedValid = Kodium.pqc.verifyDetachedFromEncodedString(keyPair.getSignPublicKey(), tamperedMessage, signatureB58)
+        val isTamperedValid = Kodium.pqc.verifyDetachedFromEncodedString(keyPair.getPublicKey(), tamperedMessage, signatureB58)
         assertFalse(isTamperedValid, "Tampered message should fail verification in PQC")
     }
 
@@ -124,7 +146,7 @@ class KodiumSignTest {
         assertTrue(classicalSigResult.isSuccess, "Large payload classical sign failed")
         val classicalSigB58 = classicalSigResult.getOrThrow()
         
-        val isClassicalValid = Kodium.verifyDetachedFromEncodedString(classicalKeyPair.getSignPublicKey(), largeMessage, classicalSigB58)
+        val isClassicalValid = Kodium.verifyDetachedFromEncodedString(classicalKeyPair.getPublicKey(), largeMessage, classicalSigB58)
         assertTrue(isClassicalValid, "Large payload classical detached signature verification failed")
 
         // --- 2. Test PQC Sign & Verify ---
@@ -133,7 +155,7 @@ class KodiumSignTest {
         assertTrue(pqcSigResult.isSuccess, "Large payload PQC sign failed")
         val pqcSigB58 = pqcSigResult.getOrThrow()
         
-        val isPqcValid = Kodium.pqc.verifyDetachedFromEncodedString(pqcKeyPair.getSignPublicKey(), largeMessage, pqcSigB58)
+        val isPqcValid = Kodium.pqc.verifyDetachedFromEncodedString(pqcKeyPair.getPublicKey(), largeMessage, pqcSigB58)
         assertTrue(isPqcValid, "Large payload PQC detached signature verification failed")
 
         // --- 3. Tamper Test on Large Payload ---
@@ -141,10 +163,10 @@ class KodiumSignTest {
         // Flip a bit somewhere in the middle of the large payload
         tamperedMessage[2500] = (tamperedMessage[2500].toInt() xor 1).toByte()
         
-        val isClassicalTamperedValid = Kodium.verifyDetachedFromEncodedString(classicalKeyPair.getSignPublicKey(), tamperedMessage, classicalSigB58)
+        val isClassicalTamperedValid = Kodium.verifyDetachedFromEncodedString(classicalKeyPair.getPublicKey(), tamperedMessage, classicalSigB58)
         assertFalse(isClassicalTamperedValid, "Large payload classical signature SHOULD FAIL when tampered")
         
-        val isPqcTamperedValid = Kodium.pqc.verifyDetachedFromEncodedString(pqcKeyPair.getSignPublicKey(), tamperedMessage, pqcSigB58)
+        val isPqcTamperedValid = Kodium.pqc.verifyDetachedFromEncodedString(pqcKeyPair.getPublicKey(), tamperedMessage, pqcSigB58)
         assertFalse(isPqcTamperedValid, "Large payload PQC signature SHOULD FAIL when tampered")
     }
 }

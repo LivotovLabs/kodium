@@ -198,14 +198,33 @@ object Kodium {
          * Note: This signature is purely classical (Ed25519) as PQC signatures (e.g. ML-DSA) are not yet integrated.
          */
         fun signDetachedToEncodedString(mySecretKey: KodiumPqcPrivateKey, data: ByteArray): Result<String> {
-            return Kodium.signDetachedToEncodedString(KodiumPrivateKey.fromRaw(mySecretKey.classicalSecretKey), data)
+            return signDetached(mySecretKey, data).mapCatching { it.encodeToBase58WithChecksum() }
+        }
+
+        /**
+         * Signs data using the classical Ed25519 component of the PQC Private Key.
+         * Returns the detached signature as a raw ByteArray.
+         */
+        fun signDetached(mySecretKey: KodiumPqcPrivateKey, data: ByteArray): Result<ByteArray> {
+            return Kodium.signDetached(KodiumPrivateKey.fromRaw(mySecretKey.classicalSecretKey), data)
         }
 
         /**
          * Verifies a Base58 encoded detached signature against a message using the classical Ed25519 public key.
          */
         fun verifyDetachedFromEncodedString(theirPublicKey: KodiumPqcPublicKey, data: ByteArray, signatureB58: String): Boolean {
-            return Kodium.verifyDetachedFromEncodedString(KodiumPublicKey(theirPublicKey.classicalPublicKey), data, signatureB58)
+            return try {
+                verifyDetached(theirPublicKey, data, signatureB58.decodeBase58WithChecksum())
+            } catch (err: Throwable) {
+                false
+            }
+        }
+
+        /**
+         * Verifies a raw detached signature against a message using the classical Ed25519 public key.
+         */
+        fun verifyDetached(theirPublicKey: KodiumPqcPublicKey, data: ByteArray, signature: ByteArray): Boolean {
+            return Kodium.verifyDetached(theirPublicKey.classicalSignPublicKey, data, signature)
         }
     }
 
@@ -214,10 +233,18 @@ object Kodium {
      * Returns the detached signature as a Base58 encoded string.
      */
     fun signDetachedToEncodedString(mySecretKey: KodiumPrivateKey, data: ByteArray): Result<String> {
+        return signDetached(mySecretKey, data).mapCatching { it.encodeToBase58WithChecksum() }
+    }
+
+    /**
+     * Signs data using the Ed25519 Secret Key.
+     * Returns the detached signature as a raw ByteArray.
+     */
+    fun signDetached(mySecretKey: KodiumPrivateKey, data: ByteArray): Result<ByteArray> {
         return try {
             val (_, sk) = nacl.Sign.keyPairFromSeed(mySecretKey.secretKey)
             val signature = nacl.Sign.signDetached(data, sk)
-            Result.success(signature.encodeToBase58WithChecksum())
+            Result.success(signature)
         } catch (err: Throwable) {
             Result.failure(err)
         }
@@ -228,10 +255,25 @@ object Kodium {
      */
     fun verifyDetachedFromEncodedString(theirPublicKey: KodiumPublicKey, data: ByteArray, signatureB58: String): Boolean {
         return try {
-            val signature = signatureB58.decodeBase58WithChecksum()
-            // To compute the Ed25519 signature we need an Ed25519 public key.
-            // When we do Verify, theirPublicKey.publicKey is expected to be an Ed25519 public key.
-            nacl.Sign.verifyDetached(signature, data, theirPublicKey.publicKey)
+            verifyDetached(theirPublicKey, data, signatureB58.decodeBase58WithChecksum())
+        } catch (err: Throwable) {
+            false
+        }
+    }
+
+    /**
+     * Verifies a raw detached signature against a message.
+     */
+    fun verifyDetached(theirPublicKey: KodiumPublicKey, data: ByteArray, signature: ByteArray): Boolean {
+        return verifyDetached(theirPublicKey.signingKey, data, signature)
+    }
+
+    /**
+     * Verifies a raw detached signature against a message using a raw public key.
+     */
+    fun verifyDetached(theirSigningPublicKey: ByteArray, data: ByteArray, signature: ByteArray): Boolean {
+        return try {
+            nacl.Sign.verifyDetached(signature, data, theirSigningPublicKey)
         } catch (err: Throwable) {
             false
         }
@@ -295,7 +337,7 @@ object Kodium {
             val cipher = nacl.Box.seal(
                 message = data,
                 nonce = nonce,
-                theirPublicKey = theirPublicKey.publicKey,
+                theirPublicKey = theirPublicKey.encryptionKey,
                 mySecretKey = mySecretKey.secretKey
             )
 
@@ -357,7 +399,7 @@ object Kodium {
 
         val res = nacl.Box.open(
             nonce = nonce,
-            theirPublicKey = theirPublicKey.publicKey,
+            theirPublicKey = theirPublicKey.encryptionKey,
             mySecretKey = mySecretKey.secretKey,
             box = msg
         )
@@ -637,10 +679,8 @@ object Kodium {
  * Represents a public key used in cryptographic operations within the KMP CryptoKit.
  * This class facilitates the handling of public keys, including importing from
  * and exporting to encoded formats with checksum validation.
- *
- * @property publicKey The byte array representing the raw public key data.
  */
-data class KodiumPublicKey(val publicKey: ByteArray) {
+data class KodiumPublicKey(val encryptionKey: ByteArray, val signingKey: ByteArray) {
 
     companion object {
 
@@ -657,7 +697,10 @@ data class KodiumPublicKey(val publicKey: ByteArray) {
          */
         fun importFromEncodedString(data: String): Result<KodiumPublicKey> {
             return try {
-                Result.success(KodiumPublicKey(data.decodeBase58WithChecksum()))
+                val material = data.decodeBase58WithChecksum()
+                val encryption = material.copyOfRange(0, nacl.Box.PublicKeySize)
+                val signing = material.copyOfRange(nacl.Box.PublicKeySize, material.size)
+                Result.success(KodiumPublicKey(encryption, signing))
             } catch (err: Throwable) {
                 Result.failure(err)
             }
@@ -677,7 +720,7 @@ data class KodiumPublicKey(val publicKey: ByteArray) {
      *
      * @return A Base58-encoded string representation of the public key material with a checksum attached.
      */
-    fun exportToEncodedString() = publicKey.encodeToBase58WithChecksum()
+    fun exportToEncodedString() = (encryptionKey + signingKey).encodeToBase58WithChecksum()
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -685,18 +728,24 @@ data class KodiumPublicKey(val publicKey: ByteArray) {
 
         other as KodiumPublicKey
 
-        if (!publicKey.contentEquals(other.publicKey)) return false
+        if (!encryptionKey.contentEquals(other.encryptionKey)) return false
+        if (!signingKey.contentEquals(other.signingKey)) return false
 
         return true
     }
 
     override fun hashCode(): Int {
-        return publicKey.contentHashCode()
+        var result = encryptionKey.contentHashCode()
+        result = 31 * result + signingKey.contentHashCode()
+        return result
     }
 
 }
 
-class KodiumPrivateKey private constructor(val secretKey: ByteArray, val publicKey: ByteArray) {
+class KodiumPrivateKey private constructor(
+    val secretKey: ByteArray,
+    val publicKeyInstance: KodiumPublicKey
+) {
 
     companion object {
         /**
@@ -704,7 +753,11 @@ class KodiumPrivateKey private constructor(val secretKey: ByteArray, val publicK
          */
         fun generate(): KodiumPrivateKey {
             val keyPair = nacl.Box.keyPair()
-            return KodiumPrivateKey(secretKey = keyPair.second, publicKey = keyPair.first)
+            val (signPk, _) = nacl.Sign.keyPairFromSeed(keyPair.second)
+            return KodiumPrivateKey(
+                secretKey = keyPair.second,
+                publicKeyInstance = KodiumPublicKey(keyPair.first, signPk)
+            )
         }
 
         /**
@@ -713,8 +766,12 @@ class KodiumPrivateKey private constructor(val secretKey: ByteArray, val publicK
          */
         fun fromRaw(secretKey: ByteArray): KodiumPrivateKey {
             require(secretKey.size == nacl.Box.SecretKeySize) { "Invalid raw secret key size" }
-            val keyPair = nacl.Box.keyPairFromSecretKey(secretKey)
-            return KodiumPrivateKey(secretKey = keyPair.second, publicKey = keyPair.first)
+            val (encryptionPk, _) = nacl.Box.keyPairFromSecretKey(secretKey)
+            val (signingPk, _) = nacl.Sign.keyPairFromSeed(secretKey)
+            return KodiumPrivateKey(
+                secretKey = secretKey,
+                publicKeyInstance = KodiumPublicKey(encryptionPk, signingPk)
+            )
         }
 
         /**
@@ -749,19 +806,10 @@ class KodiumPrivateKey private constructor(val secretKey: ByteArray, val publicK
 
     /**
      * Returns the public key component of this key pair.
-     * Note: This returns the X25519 public key used for encryption.
+     * Note: This now returns a unified public key containing both encryption and signing components.
      */
     fun getPublicKey(): KodiumPublicKey {
-        return KodiumPublicKey(this.publicKey)
-    }
-
-    /**
-     * Returns the Ed25519 public key component of this key pair, which is derived from the same secret seed.
-     * This public key must be used by other parties to verify your digital signatures.
-     */
-    fun getSignPublicKey(): KodiumPublicKey {
-        val (pk, _) = nacl.Sign.keyPairFromSeed(this.secretKey)
-        return KodiumPublicKey(pk)
+        return publicKeyInstance
     }
 
     /**
@@ -806,31 +854,38 @@ class KodiumPrivateKey private constructor(val secretKey: ByteArray, val publicK
 /**
  * Represents a Hybrid Post-Quantum Public Key.
  */
-data class KodiumPqcPublicKey(val classicalPublicKey: ByteArray, val pqcPublicKey: ByteArray) {
+data class KodiumPqcPublicKey(
+    val classicalPublicKey: ByteArray,
+    val classicalSignPublicKey: ByteArray,
+    val pqcPublicKey: ByteArray
+) {
     companion object {
         fun importFromEncodedString(data: String): Result<KodiumPqcPublicKey> {
             return try {
                 val material = data.decodeBase58WithChecksum()
                 val classical = material.copyOfRange(0, nacl.Box.PublicKeySize)
-                val pqc = material.copyOfRange(nacl.Box.PublicKeySize, material.size)
-                Result.success(KodiumPqcPublicKey(classical, pqc))
+                val classicalSign = material.copyOfRange(nacl.Box.PublicKeySize, nacl.Box.PublicKeySize + nacl.Sign.PublicKeySize)
+                val pqc = material.copyOfRange(nacl.Box.PublicKeySize + nacl.Sign.PublicKeySize, material.size)
+                Result.success(KodiumPqcPublicKey(classical, classicalSign, pqc))
             } catch (err: Throwable) {
                 Result.failure(err)
             }
         }
     }
 
-    fun exportToEncodedString(): String = (classicalPublicKey + pqcPublicKey).encodeToBase58WithChecksum()
+    fun exportToEncodedString(): String = (classicalPublicKey + classicalSignPublicKey + pqcPublicKey).encodeToBase58WithChecksum()
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is KodiumPqcPublicKey) return false
         return classicalPublicKey.contentEquals(other.classicalPublicKey) &&
+                classicalSignPublicKey.contentEquals(other.classicalSignPublicKey) &&
                 pqcPublicKey.contentEquals(other.pqcPublicKey)
     }
 
     override fun hashCode(): Int {
         var result = classicalPublicKey.contentHashCode()
+        result = 31 * result + classicalSignPublicKey.contentHashCode()
         result = 31 * result + pqcPublicKey.contentHashCode()
         return result
     }
@@ -848,10 +903,12 @@ class KodiumPqcPrivateKey private constructor(
         fun generate(): KodiumPqcPrivateKey {
             val (classicalPk, classicalSk) = nacl.Box.keyPair()
             val (pqcPk, pqcSk) = MLKEM.keyPair()
+            val (classicalSignPk, _) = nacl.Sign.keyPairFromSeed(classicalSk)
+            
             return KodiumPqcPrivateKey(
                 classicalSk,
                 pqcSk,
-                KodiumPqcPublicKey(classicalPk, pqcPk)
+                KodiumPqcPublicKey(classicalPk, classicalSignPk, pqcPk)
             )
         }
 
@@ -896,23 +953,14 @@ class KodiumPqcPrivateKey private constructor(
 
         internal fun fromRaw(classicalSk: ByteArray, pqcSk: ByteArray): KodiumPqcPrivateKey {
             val (classicalPk, _) = nacl.Box.keyPairFromSecretKey(classicalSk)
+            val (classicalSignPk, _) = nacl.Sign.keyPairFromSeed(classicalSk)
             val pqcPk = MLKEM.getPublicKeyFromSecretKey(pqcSk)
-            return KodiumPqcPrivateKey(classicalSk, pqcSk, KodiumPqcPublicKey(classicalPk, pqcPk))
+            return KodiumPqcPrivateKey(classicalSk, pqcSk, KodiumPqcPublicKey(classicalPk, classicalSignPk, pqcPk))
         }
 
     }
 
     fun getPublicKey(): KodiumPqcPublicKey = publicKeyInstance
-
-    /**
-     * Returns the hybrid Post-Quantum public key component of this key pair that must be used for signature verification.
-     * Note: Currently only the classical Ed25519 component is used for signatures.
-     */
-    fun getSignPublicKey(): KodiumPqcPublicKey {
-        val (classicalSignPk, _) = nacl.Sign.keyPairFromSeed(classicalSecretKey)
-        // Keep the same PQC public key for now as PQC signatures are not yet supported
-        return KodiumPqcPublicKey(classicalSignPk, publicKeyInstance.pqcPublicKey)
-    }
 
     /**
      * Exports the PQC private key to an encrypted, Base58-encoded string.

@@ -3,6 +3,7 @@ package io.kodium.core
 import io.kodium.KodiumPqcPrivateKey
 import io.kodium.KodiumPqcPublicKey
 import io.kodium.KodiumPrivateKey
+import io.kodium.KodiumPublicKey
 import io.kodium.core.fips203.KyberEncapsulationKey
 import io.kodium.core.fips203.MLKEM_768
 import io.kodium.core.fips203.RandomProvider
@@ -78,7 +79,7 @@ fun PQDoubleRatchetSession.Companion.initializeAsInitiatorForTesting(
         theirPqcPublicKey = responderPqcPublicKey,
         DHs = dhs,
         CTs = kemCiphertext,
-        DHr = responderPqcPublicKey.classicalPublicKey,
+        DHr = KodiumPublicKey(responderPqcPublicKey.classicalPublicKey, responderPqcPublicKey.classicalSignPublicKey),
         RK = rk,
         CKs = cks,
         CKr = null,
