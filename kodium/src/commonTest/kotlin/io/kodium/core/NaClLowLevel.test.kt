@@ -84,4 +84,16 @@ class NaClLowLevelTest {
         assertContentEquals(decrypted, message, "Hardcoded SecretBox seal/open failed.")
     }
 
+    @Test
+    fun testCryptoHash() {
+        val message = "abc".encodeToByteArray()
+        val out = ByteArray(64)
+        NaClLowLevel.crypto_hash(out, message, message.size.toULong())
+        
+        val expectedHex = "ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f"
+        val actualHex = out.joinToString("") { it.toUByte().toString(16).padStart(2, '0') }
+        
+        kotlin.test.assertEquals(expectedHex, actualHex, "SHA-512 hash mismatch")
+    }
+
 }
