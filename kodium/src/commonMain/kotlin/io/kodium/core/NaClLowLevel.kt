@@ -50,22 +50,17 @@ internal object NaClLowLevel {
 
     fun randombytes(size: Int): ByteArray {
         val arr = ByteArray(size)
-        randombytes(arr, size)
+        secureRandom.nextBytes(arr)
         return arr
     }
 
     private fun randombytes(x: ByteArray, size: Int) {
-        require(x.size >= size) { "Buffer too small" }
-        // We want to fill only the first `size` bytes of array `x`.
-        // If x.size == size, we can fill it directly.
-        if (x.size == size) {
+        if (size == x.size) {
             secureRandom.nextBytes(x)
         } else {
-            // If x is larger than size, generate `size` random bytes
-            // and copy them into the beginning of `x`.
             val temp = ByteArray(size)
             secureRandom.nextBytes(temp)
-            temp.copyInto(destination = x, destinationOffset = 0, startIndex = 0, endIndex = size)
+            temp.copyInto(x, 0, 0, size)
         }
     }
 

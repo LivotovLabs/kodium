@@ -44,6 +44,12 @@ Write once, encrypt everywhere. Even in a post-quantum world.
 
 ## 📝 Release Notes
 
+### v1.0.0-beta-1
+*   **Security & Compatibility Fix:** Fixed a critical bug in the internal SHA-512 implementation that caused Ed25519 detached signatures to fail verification against external systems (e.g., standard JWT validators). Kodium signatures are now fully standard and cross-compatible.
+*   **Optimization:** Replaced manual SHA-512 and secure random byte generation logic with optimized calls to the `kotlincrypto` library for improved performance and stability.
+*   **Testing & Reliability:** Added comprehensive tests for large payload signatures (~37KB) to ensure robust block padding and boundary handling.
+*   **Documentation:** Corrected API documentation to accurately reflect the use of PBKDF2 with HMAC-SHA256 (instead of HMAC-SHA512) for symmetric key derivation.
+
 ### v1.0.0-alpha-3
 *   **Advanced Key Management:** Added support for raw, unprotected `ByteArray` exports and imports (`exportToArray()`, `importFromArray()`) across all private keys (`KodiumPrivateKey`, `KodiumPqcPrivateKey`) and E2EE sessions (`DoubleRatchetSession`, `PQDoubleRatchetSession`) to support apps managing their own secure storage.
 *   **High-Performance Persistence:** Introduced `ByteArray` precomputed key support for symmetric encryption and state persistence, allowing developers to bypass PBKDF2 overhead when importing/exporting keys and ratchet sessions.

@@ -404,7 +404,7 @@ object Kodium {
      * against a quantum computer as a 128-bit key is against a classical computer today.
      *
      * This method generates a unique nonce for every encryption process,
-     * derives a cryptographic key using HMAC-SHA512, and encrypts the data
+     * derives a cryptographic key using HMAC-SHA256, and encrypts the data
      * with the derived key and the nonce using a secret box encryption mechanism.
      *
      * @param password The password used to derive the cryptographic key. It should be a secure string.
@@ -513,7 +513,7 @@ object Kodium {
      * Decrypts a byte array that was encrypted using symmetric encryption with a provided password.
      *
      * This function extracts the nonce from the beginning of the cipher, derives a secret key using
-     * HMAC-SHA512 with the password and nonce, and then attempts to decrypt the remaining data.
+     * HMAC-SHA256 with the password and nonce, and then attempts to decrypt the remaining data.
      *
      * If the decryption is successful, the decrypted data is returned as a `Result.success`. If it fails
      * (e.g., due to an incorrect password or tampered cipher data), a `Result.failure` is returned.

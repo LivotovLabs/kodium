@@ -7,7 +7,7 @@ fun [decryptSymmetric](decrypt-symmetric.md)(password: [String](https://kotlinla
 
 Decrypts a byte array that was encrypted using symmetric encryption with a provided password.
 
-This function extracts the nonce from the beginning of the cipher, derives a secret key using HMAC-SHA512 with the password and nonce, and then attempts to decrypt the remaining data.
+This function extracts the nonce from the beginning of the cipher, derives a secret key using HMAC-SHA256 with the password and nonce, and then attempts to decrypt the remaining data.
 
 If the decryption is successful, the decrypted data is returned as a `Result.success`. If it fails (e.g., due to an incorrect password or tampered cipher data), a `Result.failure` is returned.
 
