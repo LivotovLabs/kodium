@@ -37,18 +37,22 @@ object PQXDH {
         fun exportToEncodedString(): Result<String> {
             return try {
                 val writer = ByteWriter()
-                writer.write(identityKey.publicKey)
+                writer.write(identityKey.encryptionKey)
+                writer.write(identityKey.signingKey)
                 writer.write(pqcKey.classicalPublicKey)
+                writer.write(pqcKey.classicalSignPublicKey)
                 writer.write(pqcKey.pqcPublicKey)
                 if (oneTimePreKey != null) {
                     writer.write(1.toByte())
-                    writer.write(oneTimePreKey.publicKey)
+                    writer.write(oneTimePreKey.encryptionKey)
+                    writer.write(oneTimePreKey.signingKey)
                 } else {
                     writer.write(0.toByte())
                 }
                 if (pqcOneTimePreKey != null) {
                     writer.write(1.toByte())
                     writer.write(pqcOneTimePreKey.classicalPublicKey)
+                    writer.write(pqcOneTimePreKey.classicalSignPublicKey)
                     writer.write(pqcOneTimePreKey.pqcPublicKey)
                 } else {
                     writer.write(0.toByte())
@@ -88,13 +92,14 @@ object PQXDH {
                     val bytes = data.decodeBase58WithChecksum()
                     val reader = ByteReader(bytes)
                     
-                    val identityKey = KodiumPublicKey(reader.readBytes(32))
+                    val identityKey = KodiumPublicKey(reader.readBytes(32), reader.readBytes(32))
                     val classicalPqcKey = reader.readBytes(32)
+                    val classicalSignPqcKey = reader.readBytes(32)
                     val pqcKeyBytes = reader.readBytes(MLKEM.PublicKeySize)
-                    val pqcKey = KodiumPqcPublicKey(classicalPqcKey, pqcKeyBytes)
+                    val pqcKey = KodiumPqcPublicKey(classicalPqcKey, classicalSignPqcKey, pqcKeyBytes)
                     
                     val hasOneTime = reader.readByte() == 1.toByte()
-                    val oneTimePreKey = if (hasOneTime) KodiumPublicKey(reader.readBytes(32)) else null
+                    val oneTimePreKey = if (hasOneTime) KodiumPublicKey(reader.readBytes(32), reader.readBytes(32)) else null
                     
                     val hasPqcOneTime = try {
                         reader.readByte() == 1.toByte()
@@ -103,8 +108,9 @@ object PQXDH {
                     }
                     val pqcOneTimePreKey = if (hasPqcOneTime) {
                         val classicalKey = reader.readBytes(32)
+                        val classicalSignKey = reader.readBytes(32)
                         val pqcBytes = reader.readBytes(MLKEM.PublicKeySize)
-                        KodiumPqcPublicKey(classicalKey, pqcBytes)
+                        KodiumPqcPublicKey(classicalKey, classicalSignKey, pqcBytes)
                     } else null
                     
                     Result.success(PublicBundle(identityKey, pqcKey, oneTimePreKey, pqcOneTimePreKey))
@@ -135,8 +141,10 @@ object PQXDH {
         fun exportToEncodedString(): Result<String> {
             return try {
                 val writer = ByteWriter()
-                writer.write(identityKey.publicKey)
-                writer.write(ephemeralKey.publicKey)
+                writer.write(identityKey.encryptionKey)
+                writer.write(identityKey.signingKey)
+                writer.write(ephemeralKey.encryptionKey)
+                writer.write(ephemeralKey.signingKey)
                 
                 writer.writeInt(kemCiphertext.size)
                 writer.write(kemCiphertext)
@@ -144,6 +152,7 @@ object PQXDH {
                 if (pqcPublicKey != null) {
                     writer.write(1.toByte())
                     writer.write(pqcPublicKey.classicalPublicKey)
+                    writer.write(pqcPublicKey.classicalSignPublicKey)
                     writer.write(pqcPublicKey.pqcPublicKey)
                 } else {
                     writer.write(0.toByte())
@@ -194,8 +203,8 @@ object PQXDH {
                     val bytes = data.decodeBase58WithChecksum()
                     val reader = ByteReader(bytes)
                     
-                    val idKey = KodiumPublicKey(reader.readBytes(32))
-                    val ephKey = KodiumPublicKey(reader.readBytes(32))
+                    val idKey = KodiumPublicKey(reader.readBytes(32), reader.readBytes(32))
+                    val ephKey = KodiumPublicKey(reader.readBytes(32), reader.readBytes(32))
                     
                     val ctSize = reader.readInt()
                     val kemCt = reader.readBytes(ctSize)
@@ -203,8 +212,9 @@ object PQXDH {
                     val hasPqc = reader.readByte() == 1.toByte()
                     val pqcKey = if (hasPqc) {
                         val classicalKey = reader.readBytes(32)
+                        val classicalSignKey = reader.readBytes(32)
                         val pqcBytes = reader.readBytes(MLKEM.PublicKeySize)
-                        KodiumPqcPublicKey(classicalKey, pqcBytes)
+                        KodiumPqcPublicKey(classicalKey, classicalSignKey, pqcBytes)
                     } else null
                     
                     val hasKem2 = try {
@@ -268,14 +278,14 @@ object PQXDH {
         // dh1 = DH(IK_A, SPK_B)
         val dh1 = RatchetUtils.dh(initiatorIdentityKey.secretKey, responderBundle.pqcKey.classicalPublicKey)
         // dh2 = DH(EK_A, IK_B)
-        val dh2 = RatchetUtils.dh(initiatorEphemeralKey.secretKey, responderBundle.identityKey.publicKey)
+        val dh2 = RatchetUtils.dh(initiatorEphemeralKey.secretKey, responderBundle.identityKey.encryptionKey)
         // dh3 = DH(EK_A, SPK_B)
         val dh3 = RatchetUtils.dh(initiatorEphemeralKey.secretKey, responderBundle.pqcKey.classicalPublicKey)
 
         var dhOut = dh1 + dh2 + dh3
         if (responderBundle.oneTimePreKey != null) {
             // dh4 = DH(EK_A, OPK_B)
-            val dh4 = RatchetUtils.dh(initiatorEphemeralKey.secretKey, responderBundle.oneTimePreKey.publicKey)
+            val dh4 = RatchetUtils.dh(initiatorEphemeralKey.secretKey, responderBundle.oneTimePreKey.encryptionKey)
             dhOut += dh4
         }
 
@@ -328,16 +338,16 @@ object PQXDH {
         info: ByteArray = INFO_PQXDH
     ): ByteArray {
         // dh1 = DH(SPK_B, IK_A)
-        val dh1 = RatchetUtils.dh(responderPqcKey.classicalSecretKey, initiatorPayload.identityKey.publicKey)
+        val dh1 = RatchetUtils.dh(responderPqcKey.classicalSecretKey, initiatorPayload.identityKey.encryptionKey)
         // dh2 = DH(IK_B, EK_A)
-        val dh2 = RatchetUtils.dh(responderIdentityKey.secretKey, initiatorPayload.ephemeralKey.publicKey)
+        val dh2 = RatchetUtils.dh(responderIdentityKey.secretKey, initiatorPayload.ephemeralKey.encryptionKey)
         // dh3 = DH(SPK_B, EK_A)
-        val dh3 = RatchetUtils.dh(responderPqcKey.classicalSecretKey, initiatorPayload.ephemeralKey.publicKey)
+        val dh3 = RatchetUtils.dh(responderPqcKey.classicalSecretKey, initiatorPayload.ephemeralKey.encryptionKey)
 
         var dhOut = dh1 + dh2 + dh3
         if (responderOneTimePreKey != null) {
             // dh4 = DH(OPK_B, EK_A)
-            val dh4 = RatchetUtils.dh(responderOneTimePreKey.secretKey, initiatorPayload.ephemeralKey.publicKey)
+            val dh4 = RatchetUtils.dh(responderOneTimePreKey.secretKey, initiatorPayload.ephemeralKey.encryptionKey)
             dhOut += dh4
         }
 

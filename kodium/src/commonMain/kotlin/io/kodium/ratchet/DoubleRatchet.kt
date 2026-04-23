@@ -18,7 +18,7 @@ import org.kotlincrypto.macs.hmac.sha2.HmacSHA256
  * @property n The sequential message number within the current sending chain.
  */
 data class RatchetHeader(
-    val dh: ByteArray,
+    val dh: KodiumPublicKey,
     val pn: Int,
     val n: Int
 ) {
@@ -26,21 +26,22 @@ data class RatchetHeader(
      * Serializes the header into a byte array suitable for transmission and for inclusion
      * as Associated Data (AD) during AEAD encryption.
      *
-     * @return A 40-byte array containing the serialized header `[32-byte DH Key][4-byte PN][4-byte N]`.
+     * @return A byte array containing the serialized header `[64-byte unified DH Key][4-byte PN][4-byte N]`.
      */
     fun serialize(): ByteArray {
-        val bytes = ByteArray(32 + 4 + 4)
-        dh.copyInto(bytes, 0)
+        val bytes = ByteArray(64 + 4 + 4)
+        dh.encryptionKey.copyInto(bytes, 0)
+        dh.signingKey.copyInto(bytes, 32)
         
-        bytes[32] = (pn shr 24).toByte()
-        bytes[33] = (pn shr 16).toByte()
-        bytes[34] = (pn shr 8).toByte()
-        bytes[35] = pn.toByte()
+        bytes[64] = (pn shr 24).toByte()
+        bytes[65] = (pn shr 16).toByte()
+        bytes[66] = (pn shr 8).toByte()
+        bytes[67] = pn.toByte()
 
-        bytes[36] = (n shr 24).toByte()
-        bytes[37] = (n shr 16).toByte()
-        bytes[38] = (n shr 8).toByte()
-        bytes[39] = n.toByte()
+        bytes[68] = (n shr 24).toByte()
+        bytes[69] = (n shr 16).toByte()
+        bytes[70] = (n shr 8).toByte()
+        bytes[71] = n.toByte()
 
         return bytes
     }
@@ -49,7 +50,7 @@ data class RatchetHeader(
         if (this === other) return true
         if (other !is RatchetHeader) return false
 
-        if (!dh.contentEquals(other.dh)) return false
+        if (dh != other.dh) return false
         if (pn != other.pn) return false
         if (n != other.n) return false
 
@@ -57,7 +58,7 @@ data class RatchetHeader(
     }
 
     override fun hashCode(): Int {
-        var result = dh.contentHashCode()
+        var result = dh.hashCode()
         result = 31 * result + pn
         result = 31 * result + n
         return result
@@ -67,23 +68,25 @@ data class RatchetHeader(
         /**
          * Deserializes a byte array back into a [RatchetHeader].
          *
-         * @param bytes The 40-byte serialized header array.
+         * @param bytes The 72-byte serialized header array.
          * @return The parsed [RatchetHeader] object.
-         * @throws IllegalArgumentException if the provided byte array is smaller than 40 bytes.
+         * @throws IllegalArgumentException if the provided byte array is smaller than 72 bytes.
          */
         fun deserialize(bytes: ByteArray): RatchetHeader {
-            require(bytes.size >= 40) { "Header size must be at least 40 bytes" }
-            val dh = bytes.sliceArray(0 until 32)
+            require(bytes.size >= 72) { "Header size must be at least 72 bytes" }
+            val encryptionKey = bytes.sliceArray(0 until 32)
+            val signingKey = bytes.sliceArray(32 until 64)
+            val dh = KodiumPublicKey(encryptionKey, signingKey)
             
-            val pn = ((bytes[32].toInt() and 0xFF) shl 24) or
-                     ((bytes[33].toInt() and 0xFF) shl 16) or
-                     ((bytes[34].toInt() and 0xFF) shl 8) or
-                     (bytes[35].toInt() and 0xFF)
+            val pn = ((bytes[64].toInt() and 0xFF) shl 24) or
+                     ((bytes[65].toInt() and 0xFF) shl 16) or
+                     ((bytes[66].toInt() and 0xFF) shl 8) or
+                     (bytes[67].toInt() and 0xFF)
                      
-            val n = ((bytes[36].toInt() and 0xFF) shl 24) or
-                    ((bytes[37].toInt() and 0xFF) shl 16) or
-                    ((bytes[38].toInt() and 0xFF) shl 8) or
-                    (bytes[39].toInt() and 0xFF)
+            val n = ((bytes[68].toInt() and 0xFF) shl 24) or
+                    ((bytes[69].toInt() and 0xFF) shl 16) or
+                    ((bytes[70].toInt() and 0xFF) shl 8) or
+                    (bytes[71].toInt() and 0xFF)
             
             return RatchetHeader(dh, pn, n)
         }
@@ -114,7 +117,7 @@ data class RatchetMessage(
          */
         fun deserialize(bytes: ByteArray): RatchetMessage {
             val header = RatchetHeader.deserialize(bytes)
-            val ciphertext = bytes.sliceArray(40 until bytes.size)
+            val ciphertext = bytes.sliceArray(72 until bytes.size)
             return RatchetMessage(header, ciphertext)
         }
     }
@@ -133,7 +136,7 @@ data class RatchetMessage(
  */
 class DoubleRatchetSession private constructor(
     private var DHs: KodiumPrivateKey,
-    private var DHr: ByteArray?,
+    private var DHr: KodiumPublicKey?,
     private var RK: ByteArray,
     private var CKs: ByteArray?,
     private var CKr: ByteArray?,
@@ -155,7 +158,7 @@ class DoubleRatchetSession private constructor(
          * Initializes a new Double Ratchet session for the Initiator (the party who sends the first message).
          *
          * @param sharedSecret The 32-byte master shared secret, typically derived from an X3DH key agreement.
-         * @param responderRatchetKey The Responder's public Curve25519 ratchet key (often their Signed PreKey).
+         * @param responderRatchetKey The Responder's public unified ratchet key (often their Signed PreKey).
          * @param applicationInfo Optional context-binding string. MUST match the string used by the Responder
          *                        to prevent cross-protocol attacks.
          * @param maxSkippedMessages The maximum number of skipped message keys to store in memory (default 2000).
@@ -164,7 +167,7 @@ class DoubleRatchetSession private constructor(
          */
         fun initializeAsInitiator(
             sharedSecret: ByteArray,
-            responderRatchetKey: ByteArray,
+            responderRatchetKey: KodiumPublicKey,
             applicationInfo: ByteArray = DEFAULT_INFO_KDF_RK,
             maxSkippedMessages: Int = DEFAULT_MAX_SKIPPED_MESSAGES
         ): DoubleRatchetSession {
@@ -172,7 +175,7 @@ class DoubleRatchetSession private constructor(
             
             val kdfResult = HKDF.deriveSecrets(
                 salt = sharedSecret,
-                ikm = RatchetUtils.dh(dhs.secretKey, responderRatchetKey),
+                ikm = RatchetUtils.dh(dhs.secretKey, responderRatchetKey.encryptionKey),
                 info = applicationInfo,
                 length = 64
             )
@@ -258,7 +261,11 @@ class DoubleRatchetSession private constructor(
                 val dhs = KodiumPrivateKey.fromRaw(reader.readBytes(32))
                 
                 val hasDHr = reader.readByte() == 1.toByte()
-                val dhr = if (hasDHr) reader.readBytes(32) else null
+                val dhr = if (hasDHr) {
+                    val encryptionKey = reader.readBytes(32)
+                    val signingKey = reader.readBytes(32)
+                    KodiumPublicKey(encryptionKey, signingKey)
+                } else null
                 
                 val rk = reader.readBytes(32)
                 
@@ -353,7 +360,8 @@ class DoubleRatchetSession private constructor(
         
         if (DHr != null) {
             writer.write(1.toByte())
-            writer.write(DHr!!)
+            writer.write(DHr!!.encryptionKey)
+            writer.write(DHr!!.signingKey)
         } else {
             writer.write(0.toByte())
         }
@@ -429,7 +437,7 @@ class DoubleRatchetSession private constructor(
             val (newCks, mk) = kdfCk(cks)
             this.CKs = newCks
 
-            val header = RatchetHeader(this.DHs.publicKey, this.PN, this.Ns)
+            val header = RatchetHeader(this.DHs.getPublicKey(), this.PN, this.Ns)
             this.Ns += 1
 
             val ad = associatedData + header.serialize()
@@ -458,7 +466,7 @@ class DoubleRatchetSession private constructor(
                 return Result.success(plaintext)
             }
 
-            if (DHr == null || !message.header.dh.contentEquals(DHr!!)) {
+            if (DHr == null || message.header.dh != DHr) {
                 skipMessageKeys(message.header.pn)
                 dhRatchet(message.header)
             }
@@ -514,13 +522,13 @@ class DoubleRatchetSession private constructor(
         this.Nr = 0
         this.DHr = header.dh
 
-        val (rk, ckr) = kdfRk(this.RK, RatchetUtils.dh(this.DHs.secretKey, this.DHr!!))
+        val (rk, ckr) = kdfRk(this.RK, RatchetUtils.dh(this.DHs.secretKey, this.DHr!!.encryptionKey))
         this.RK = rk
         this.CKr = ckr
 
         this.DHs = KodiumPrivateKey.generate()
         
-        val (newRk, cks) = kdfRk(this.RK, RatchetUtils.dh(this.DHs.secretKey, this.DHr!!))
+        val (newRk, cks) = kdfRk(this.RK, RatchetUtils.dh(this.DHs.secretKey, this.DHr!!.encryptionKey))
         this.RK = newRk
         this.CKs = cks
     }
@@ -535,7 +543,7 @@ class DoubleRatchetSession private constructor(
         while (this.Nr < until) {
             val (newCkr, mk) = kdfCk(ckr)
             ckr = newCkr
-            this.MKSKIPPED[RatchetUtils.toHex(DHr!!) + this.Nr] = mk
+            this.MKSKIPPED[RatchetUtils.toHex(DHr!!.encryptionKey) + this.Nr] = mk
             
             // Enforce LRU Memory Limit
             if (this.MKSKIPPED.size > this.maxSkippedMessages) {
@@ -550,7 +558,7 @@ class DoubleRatchetSession private constructor(
     }
 
     private fun trySkippedMessageKeys(header: RatchetHeader, ciphertext: ByteArray, associatedData: ByteArray): ByteArray? {
-        val key = RatchetUtils.toHex(header.dh) + header.n
+        val key = RatchetUtils.toHex(header.dh.encryptionKey) + header.n
         val mk = MKSKIPPED[key] ?: return null
         
         val ad = associatedData + header.serialize()

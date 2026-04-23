@@ -19,9 +19,9 @@ object X3DH {
      * @property oneTimePreKey Responder's one-time pre-key public key (optional).
      */
     data class PublicBundle(
-        val identityKey: ByteArray,
-        val signedPreKey: ByteArray,
-        val oneTimePreKey: ByteArray? = null
+        val identityKey: KodiumPublicKey,
+        val signedPreKey: KodiumPublicKey,
+        val oneTimePreKey: KodiumPublicKey? = null
     ) {
         /**
          * Exports this PublicBundle to a Base58-encoded string with a checksum.
@@ -30,11 +30,14 @@ object X3DH {
         fun exportToEncodedString(): Result<String> {
             return try {
                 val writer = ByteWriter()
-                writer.write(identityKey)
-                writer.write(signedPreKey)
+                writer.write(identityKey.encryptionKey)
+                writer.write(identityKey.signingKey)
+                writer.write(signedPreKey.encryptionKey)
+                writer.write(signedPreKey.signingKey)
                 if (oneTimePreKey != null) {
                     writer.write(1.toByte())
-                    writer.write(oneTimePreKey)
+                    writer.write(oneTimePreKey.encryptionKey)
+                    writer.write(oneTimePreKey.signingKey)
                 } else {
                     writer.write(0.toByte())
                 }
@@ -48,20 +51,17 @@ object X3DH {
             if (this === other) return true
             if (other !is PublicBundle) return false
 
-            if (!identityKey.contentEquals(other.identityKey)) return false
-            if (!signedPreKey.contentEquals(other.signedPreKey)) return false
-            if (oneTimePreKey != null) {
-                if (other.oneTimePreKey == null) return false
-                if (!oneTimePreKey.contentEquals(other.oneTimePreKey)) return false
-            } else if (other.oneTimePreKey != null) return false
+            if (identityKey != other.identityKey) return false
+            if (signedPreKey != other.signedPreKey) return false
+            if (oneTimePreKey != other.oneTimePreKey) return false
 
             return true
         }
 
         override fun hashCode(): Int {
-            var result = identityKey.contentHashCode()
-            result = 31 * result + signedPreKey.contentHashCode()
-            result = 31 * result + (oneTimePreKey?.contentHashCode() ?: 0)
+            var result = identityKey.hashCode()
+            result = 31 * result + signedPreKey.hashCode()
+            result = 31 * result + (oneTimePreKey?.hashCode() ?: 0)
             return result
         }
 
@@ -73,11 +73,11 @@ object X3DH {
                 return try {
                     val bytes = data.decodeBase58WithChecksum()
                     val reader = ByteReader(bytes)
-                    val identityKey = reader.readBytes(32)
-                    val signedPreKey = reader.readBytes(32)
+                    val identityKey = KodiumPublicKey(reader.readBytes(32), reader.readBytes(32))
+                    val signedPreKey = KodiumPublicKey(reader.readBytes(32), reader.readBytes(32))
                     
                     val hasOneTime = reader.readByte() == 1.toByte()
-                    val oneTimePreKey = if (hasOneTime) reader.readBytes(32) else null
+                    val oneTimePreKey = if (hasOneTime) KodiumPublicKey(reader.readBytes(32), reader.readBytes(32)) else null
                     
                     Result.success(PublicBundle(identityKey, signedPreKey, oneTimePreKey))
                 } catch (e: Exception) {
@@ -101,13 +101,13 @@ object X3DH {
         responderBundle: PublicBundle,
         info: ByteArray = INFO_X3DH
     ): ByteArray {
-        val dh1 = RatchetUtils.dh(initiatorIdentityKey.secretKey, responderBundle.signedPreKey)
-        val dh2 = RatchetUtils.dh(initiatorEphemeralKey.secretKey, responderBundle.identityKey)
-        val dh3 = RatchetUtils.dh(initiatorEphemeralKey.secretKey, responderBundle.signedPreKey)
+        val dh1 = RatchetUtils.dh(initiatorIdentityKey.secretKey, responderBundle.signedPreKey.encryptionKey)
+        val dh2 = RatchetUtils.dh(initiatorEphemeralKey.secretKey, responderBundle.identityKey.encryptionKey)
+        val dh3 = RatchetUtils.dh(initiatorEphemeralKey.secretKey, responderBundle.signedPreKey.encryptionKey)
 
         var dhOut = dh1 + dh2 + dh3
         if (responderBundle.oneTimePreKey != null) {
-            val dh4 = RatchetUtils.dh(initiatorEphemeralKey.secretKey, responderBundle.oneTimePreKey)
+            val dh4 = RatchetUtils.dh(initiatorEphemeralKey.secretKey, responderBundle.oneTimePreKey.encryptionKey)
             dhOut += dh4
         }
 
@@ -133,17 +133,17 @@ object X3DH {
         responderIdentityKey: KodiumPrivateKey,
         responderSignedPreKey: KodiumPrivateKey,
         responderOneTimePreKey: KodiumPrivateKey?,
-        initiatorIdentityKey: ByteArray,
-        initiatorEphemeralKey: ByteArray,
+        initiatorIdentityKey: KodiumPublicKey,
+        initiatorEphemeralKey: KodiumPublicKey,
         info: ByteArray = INFO_X3DH
     ): ByteArray {
-        val dh1 = RatchetUtils.dh(responderSignedPreKey.secretKey, initiatorIdentityKey)
-        val dh2 = RatchetUtils.dh(responderIdentityKey.secretKey, initiatorEphemeralKey)
-        val dh3 = RatchetUtils.dh(responderSignedPreKey.secretKey, initiatorEphemeralKey)
+        val dh1 = RatchetUtils.dh(responderSignedPreKey.secretKey, initiatorIdentityKey.encryptionKey)
+        val dh2 = RatchetUtils.dh(responderIdentityKey.secretKey, initiatorEphemeralKey.encryptionKey)
+        val dh3 = RatchetUtils.dh(responderSignedPreKey.secretKey, initiatorEphemeralKey.encryptionKey)
 
         var dhOut = dh1 + dh2 + dh3
         if (responderOneTimePreKey != null) {
-            val dh4 = RatchetUtils.dh(responderOneTimePreKey.secretKey, initiatorEphemeralKey)
+            val dh4 = RatchetUtils.dh(responderOneTimePreKey.secretKey, initiatorEphemeralKey.encryptionKey)
             dhOut += dh4
         }
 

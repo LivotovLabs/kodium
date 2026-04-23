@@ -1,5 +1,6 @@
 package io.kodium.ratchet
 
+import io.kodium.KodiumPublicKey
 import io.kodium.core.MLKEM
 
 /**
@@ -7,16 +8,16 @@ import io.kodium.core.MLKEM
  * Double Ratchet session.
  *
  * Unlike a classical RatchetHeader (which is 40 bytes), the PQRatchetHeader is significantly
- * larger (typically ~1,128 bytes) because it must carry the ML-KEM ciphertext required to
+ * larger (typically ~1,160 bytes) because it must carry the ML-KEM ciphertext required to
  * perform the quantum-resistant asymmetric ratchet step.
  *
- * @property dh The sender's current ephemeral public Curve25519 ratchet key for the DH ratchet step.
+ * @property dh The sender's current ephemeral public unified ratchet key for the DH ratchet step.
  * @property kemCiphertext The ML-KEM ciphertext encapsulated to the recipient's long-term PQC public key.
  * @property pn The length of the previous sending chain (used to calculate how many messages to skip).
  * @property n The sequential message number within the current sending chain.
  */
 data class PQRatchetHeader(
-    val dh: ByteArray,
+    val dh: KodiumPublicKey,
     val kemCiphertext: ByteArray,
     val pn: Int,
     val n: Int
@@ -25,15 +26,16 @@ data class PQRatchetHeader(
      * Serializes the header into a byte array suitable for transmission and for inclusion
      * as Associated Data (AD) during AEAD encryption.
      *
-     * Format: `[32-byte DH Key][1088-byte ML-KEM Ciphertext][4-byte PN][4-byte N]`
+     * Format: `[64-byte unified DH Key][1088-byte ML-KEM Ciphertext][4-byte PN][4-byte N]`
      */
     fun serialize(): ByteArray {
-        val dhSize = 32
+        val dhSize = 64
         val kemSize = MLKEM.CiphertextSize
         
         val bytes = ByteArray(dhSize + kemSize + 4 + 4)
         
-        dh.copyInto(bytes, 0)
+        dh.encryptionKey.copyInto(bytes, 0)
+        dh.signingKey.copyInto(bytes, 32)
         kemCiphertext.copyInto(bytes, dhSize)
         
         val offsetPn = dhSize + kemSize
@@ -55,7 +57,7 @@ data class PQRatchetHeader(
         if (this === other) return true
         if (other !is PQRatchetHeader) return false
 
-        if (!dh.contentEquals(other.dh)) return false
+        if (dh != other.dh) return false
         if (!kemCiphertext.contentEquals(other.kemCiphertext)) return false
         if (pn != other.pn) return false
         if (n != other.n) return false
@@ -64,7 +66,7 @@ data class PQRatchetHeader(
     }
 
     override fun hashCode(): Int {
-        var result = dh.contentHashCode()
+        var result = dh.hashCode()
         result = 31 * result + kemCiphertext.contentHashCode()
         result = 31 * result + pn
         result = 31 * result + n
@@ -80,13 +82,16 @@ data class PQRatchetHeader(
          * @throws IllegalArgumentException if the provided byte array is smaller than the required size.
          */
         fun deserialize(bytes: ByteArray): PQRatchetHeader {
-            val dhSize = 32
+            val dhSize = 64
             val kemSize = MLKEM.CiphertextSize
             val expectedSize = dhSize + kemSize + 8
             
             require(bytes.size >= expectedSize) { "Header size must be at least $expectedSize bytes" }
             
-            val dh = bytes.sliceArray(0 until dhSize)
+            val encryptionKey = bytes.sliceArray(0 until 32)
+            val signingKey = bytes.sliceArray(32 until 64)
+            val dh = KodiumPublicKey(encryptionKey, signingKey)
+            
             val kemCiphertext = bytes.sliceArray(dhSize until dhSize + kemSize)
             
             val offsetPn = dhSize + kemSize
@@ -146,7 +151,7 @@ data class PQRatchetMessage(
          */
         fun deserialize(bytes: ByteArray): PQRatchetMessage {
             val header = PQRatchetHeader.deserialize(bytes)
-            val headerSize = 32 + MLKEM.CiphertextSize + 8
+            val headerSize = 64 + MLKEM.CiphertextSize + 8
             val ciphertext = bytes.sliceArray(headerSize until bytes.size)
             return PQRatchetMessage(header, ciphertext)
         }

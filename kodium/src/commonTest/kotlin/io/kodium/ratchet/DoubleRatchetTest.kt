@@ -34,9 +34,9 @@ class DoubleRatchetTest {
         val bobOneTimePreKey = KodiumPrivateKey.generate()
 
         val bobBundle = X3DH.PublicBundle(
-            identityKey = bobIdentityKey.publicKey,
-            signedPreKey = bobSignedPreKey.publicKey,
-            oneTimePreKey = bobOneTimePreKey.publicKey
+            identityKey = bobIdentityKey.getPublicKey(),
+            signedPreKey = bobSignedPreKey.getPublicKey(),
+            oneTimePreKey = bobOneTimePreKey.getPublicKey()
         )
 
         val aliceSecret = X3DH.calculateSecretAsInitiator(
@@ -49,8 +49,8 @@ class DoubleRatchetTest {
             responderIdentityKey = bobIdentityKey,
             responderSignedPreKey = bobSignedPreKey,
             responderOneTimePreKey = bobOneTimePreKey,
-            initiatorIdentityKey = aliceIdentityKey.publicKey,
-            initiatorEphemeralKey = aliceEphemeralKey.publicKey
+            initiatorIdentityKey = aliceIdentityKey.getPublicKey(),
+            initiatorEphemeralKey = aliceEphemeralKey.getPublicKey()
         )
 
         assertContentEquals(aliceSecret, bobSecret, "X3DH shared secrets should match")
@@ -59,9 +59,9 @@ class DoubleRatchetTest {
 
     @Test
     fun testPublicBundleSerialization() {
-        val identityKey = KodiumPrivateKey.generate().publicKey
-        val signedPreKey = KodiumPrivateKey.generate().publicKey
-        val oneTimePreKey = KodiumPrivateKey.generate().publicKey
+        val identityKey = KodiumPrivateKey.generate().getPublicKey()
+        val signedPreKey = KodiumPrivateKey.generate().getPublicKey()
+        val oneTimePreKey = KodiumPrivateKey.generate().getPublicKey()
         
         val bundleWithOneTime = X3DH.PublicBundle(identityKey, signedPreKey, oneTimePreKey)
         val serializedWithOneTime = bundleWithOneTime.exportToEncodedString().getOrThrow()
@@ -84,15 +84,15 @@ class DoubleRatchetTest {
         val bobSignedPreKey = KodiumPrivateKey.generate() // Bob's initial ratchet key is usually his Signed PreKey
 
         val bobBundle = X3DH.PublicBundle(
-            identityKey = bobIdentityKey.publicKey,
-            signedPreKey = bobSignedPreKey.publicKey
+            identityKey = bobIdentityKey.getPublicKey(),
+            signedPreKey = bobSignedPreKey.getPublicKey()
         )
 
         val sharedSecret = X3DH.calculateSecretAsInitiator(aliceIdentityKey, aliceEphemeralKey, bobBundle)
 
         // 2. Initialize Sessions
         // Alice starts the session, Bob's public ratchet key is his signed prekey
-        val aliceSession = DoubleRatchetSession.initializeAsInitiator(sharedSecret, bobSignedPreKey.publicKey)
+        val aliceSession = DoubleRatchetSession.initializeAsInitiator(sharedSecret, bobSignedPreKey.getPublicKey())
         
         // Bob initializes his session
         val bobSession = DoubleRatchetSession.initializeAsResponder(sharedSecret, bobSignedPreKey)
@@ -124,7 +124,7 @@ class DoubleRatchetTest {
         val sharedSecret = ByteArray(32) { 1 }
         val bobRatchetKey = KodiumPrivateKey.generate()
 
-        val aliceSession = DoubleRatchetSession.initializeAsInitiator(sharedSecret, bobRatchetKey.publicKey)
+        val aliceSession = DoubleRatchetSession.initializeAsInitiator(sharedSecret, bobRatchetKey.getPublicKey())
         val bobSession = DoubleRatchetSession.initializeAsResponder(sharedSecret, bobRatchetKey)
 
         // Alice sends 3 messages
@@ -150,7 +150,7 @@ class DoubleRatchetTest {
         val sharedSecret = ByteArray(32) { 42 }
         val bobRatchetKey = KodiumPrivateKey.generate()
 
-        val aliceSession = DoubleRatchetSession.initializeAsInitiator(sharedSecret, bobRatchetKey.publicKey)
+        val aliceSession = DoubleRatchetSession.initializeAsInitiator(sharedSecret, bobRatchetKey.getPublicKey())
         val bobSession = DoubleRatchetSession.initializeAsResponder(sharedSecret, bobRatchetKey)
 
         // Alice sends a message
@@ -183,7 +183,7 @@ class DoubleRatchetTest {
         val sharedSecret = ByteArray(32) { 42 }
         val bobRatchetKey = KodiumPrivateKey.generate()
 
-        val aliceSession = DoubleRatchetSession.initializeAsInitiator(sharedSecret, bobRatchetKey.publicKey)
+        val aliceSession = DoubleRatchetSession.initializeAsInitiator(sharedSecret, bobRatchetKey.getPublicKey())
         val bobSession = DoubleRatchetSession.initializeAsResponder(sharedSecret, bobRatchetKey)
 
         // Alice sends a message
@@ -212,7 +212,7 @@ class DoubleRatchetTest {
         val sharedSecret = ByteArray(32) { 42 }
         val bobRatchetKey = KodiumPrivateKey.generate()
 
-        val aliceSession = DoubleRatchetSession.initializeAsInitiator(sharedSecret, bobRatchetKey.publicKey)
+        val aliceSession = DoubleRatchetSession.initializeAsInitiator(sharedSecret, bobRatchetKey.getPublicKey())
         val bobSession = DoubleRatchetSession.initializeAsResponder(sharedSecret, bobRatchetKey)
 
         // Alice sends a message
@@ -241,7 +241,7 @@ class DoubleRatchetTest {
         val aliceEphemeralKey = KodiumPrivateKey.generate()
         val bobIdentityKey = KodiumPrivateKey.generate()
         val bobSignedPreKey = KodiumPrivateKey.generate()
-        val bobBundle = X3DH.PublicBundle(bobIdentityKey.publicKey, bobSignedPreKey.publicKey)
+        val bobBundle = X3DH.PublicBundle(bobIdentityKey.getPublicKey(), bobSignedPreKey.getPublicKey())
 
         val info1 = "App-Context-1".encodeToByteArray()
         val info2 = "App-Context-2".encodeToByteArray()
@@ -257,7 +257,7 @@ class DoubleRatchetTest {
         assertTrue(match != 0, "Secrets should be different for different application info")
 
         // Sessions with different info should not be able to communicate
-        val aliceSession = DoubleRatchetSession.initializeAsInitiator(secret1, bobSignedPreKey.publicKey, info1)
+        val aliceSession = DoubleRatchetSession.initializeAsInitiator(secret1, bobSignedPreKey.getPublicKey(), info1)
         val bobSession = DoubleRatchetSession.initializeAsResponder(secret2, bobSignedPreKey, info2)
 
         val msg = aliceSession.encryptToEncodedString("Hello".encodeToByteArray()).getOrThrow()

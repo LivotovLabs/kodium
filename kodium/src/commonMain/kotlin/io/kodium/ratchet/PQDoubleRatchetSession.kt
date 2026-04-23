@@ -3,6 +3,7 @@ package io.kodium.ratchet
 import io.kodium.KodiumPqcPrivateKey
 import io.kodium.KodiumPqcPublicKey
 import io.kodium.KodiumPrivateKey
+import io.kodium.KodiumPublicKey
 import io.kodium.core.MLKEM
 import io.kodium.core.decodeBase58WithChecksum
 import io.kodium.core.encodeToBase58WithChecksum
@@ -22,7 +23,7 @@ class PQDoubleRatchetSession internal constructor(
     private val theirPqcPublicKey: KodiumPqcPublicKey,
     private var DHs: KodiumPrivateKey,
     private var CTs: ByteArray?,
-    private var DHr: ByteArray?,
+    private var DHr: KodiumPublicKey?,
     private var RK: ByteArray,
     private var CKs: ByteArray?,
     private var CKr: ByteArray?,
@@ -79,7 +80,7 @@ class PQDoubleRatchetSession internal constructor(
                 theirPqcPublicKey = responderPqcPublicKey,
                 DHs = dhs,
                 CTs = kemCiphertext,
-                DHr = responderPqcPublicKey.classicalPublicKey,
+                DHr = KodiumPublicKey(responderPqcPublicKey.classicalPublicKey, responderPqcPublicKey.classicalSignPublicKey),
                 RK = rk,
                 CKs = cks,
                 CKr = null,
@@ -170,8 +171,9 @@ class PQDoubleRatchetSession internal constructor(
 
                 // Read theirPqcPublicKey
                 val theirClassicalPk = reader.readBytes(32)
+                val theirClassicalSignPk = reader.readBytes(32)
                 val theirPqcPk = reader.readBytes(MLKEM.PublicKeySize)
-                val theirPqcPublicKey = KodiumPqcPublicKey(theirClassicalPk, theirPqcPk)
+                val theirPqcPublicKey = KodiumPqcPublicKey(theirClassicalPk, theirClassicalSignPk, theirPqcPk)
                 
                 val dhs = KodiumPrivateKey.fromRaw(reader.readBytes(32))
                 
@@ -179,7 +181,11 @@ class PQDoubleRatchetSession internal constructor(
                 val cts = if (hasCTs) reader.readBytes(MLKEM.CiphertextSize) else null
                 
                 val hasDHr = reader.readByte() == 1.toByte()
-                val dhr = if (hasDHr) reader.readBytes(32) else null
+                val dhr = if (hasDHr) {
+                    val encryptionPk = reader.readBytes(32)
+                    val signingPk = reader.readBytes(32)
+                    KodiumPublicKey(encryptionPk, signingPk)
+                } else null
                 
                 val rk = reader.readBytes(32)
                 
@@ -281,6 +287,7 @@ class PQDoubleRatchetSession internal constructor(
         
         // theirPqcPublicKey
         writer.write(theirPqcPublicKey.classicalPublicKey)
+        writer.write(theirPqcPublicKey.classicalSignPublicKey)
         writer.write(theirPqcPublicKey.pqcPublicKey)
         
         writer.write(DHs.secretKey)
@@ -292,9 +299,11 @@ class PQDoubleRatchetSession internal constructor(
             writer.write(0.toByte())
         }
         
-        if (DHr != null) {
+        val dhr = DHr
+        if (dhr != null) {
             writer.write(1.toByte())
-            writer.write(DHr!!)
+            writer.write(dhr.encryptionKey)
+            writer.write(dhr.signingKey)
         } else {
             writer.write(0.toByte())
         }
@@ -363,7 +372,7 @@ class PQDoubleRatchetSession internal constructor(
             this.CKs = newCks
 
             val cts = this.CTs ?: throw IllegalStateException("CTs (ML-KEM Ciphertext) not initialized")
-            val header = PQRatchetHeader(this.DHs.publicKey, cts, this.PN, this.Ns)
+            val header = PQRatchetHeader(this.DHs.getPublicKey(), cts, this.PN, this.Ns)
             this.Ns += 1
 
             val ad = associatedData + header.serialize()
@@ -382,7 +391,7 @@ class PQDoubleRatchetSession internal constructor(
                 return Result.success(plaintext)
             }
 
-            if (DHr == null || !message.header.dh.contentEquals(DHr!!)) {
+            if (DHr == null || message.header.dh != DHr) {
                 skipMessageKeys(message.header.pn)
                 dhRatchet(message.header)
             }
@@ -426,7 +435,8 @@ class PQDoubleRatchetSession internal constructor(
         val sharedSecretPqcR = MLKEM.decapsulate(header.kemCiphertext, this.ourPqcKey.pqcSecretKey)
             ?: throw IllegalStateException("ML-KEM decapsulation failed")
 
-        val dhR = RatchetUtils.dh(this.DHs.secretKey, this.DHr!!)
+        val dhr = DHr!!
+        val dhR = RatchetUtils.dh(this.DHs.secretKey, dhr.encryptionKey)
         val (rk, ckr) = kdfRk(this.RK, dhR + sharedSecretPqcR)
         this.RK = rk
         this.CKr = ckr
@@ -436,7 +446,7 @@ class PQDoubleRatchetSession internal constructor(
         val (sharedSecretPqcS, kemCiphertextS) = MLKEM.encapsulate(this.theirPqcPublicKey.pqcPublicKey)
         this.CTs = kemCiphertextS
 
-        val dhS = RatchetUtils.dh(this.DHs.secretKey, this.DHr!!)
+        val dhS = RatchetUtils.dh(this.DHs.secretKey, dhr.encryptionKey)
         val (newRk, cks) = kdfRk(this.RK, dhS + sharedSecretPqcS)
         this.RK = newRk
         this.CKs = cks
@@ -447,12 +457,13 @@ class PQDoubleRatchetSession internal constructor(
             throw IllegalArgumentException("Too many messages skipped")
         }
         
+        val dhr = this.DHr ?: return
         var ckr = this.CKr ?: return
         
         while (this.Nr < until) {
             val (newCkr, mk) = kdfCk(ckr)
             ckr = newCkr
-            this.MKSKIPPED[RatchetUtils.toHex(DHr!!) + this.Nr] = mk
+            this.MKSKIPPED[RatchetUtils.toHex(dhr.encryptionKey) + this.Nr] = mk
             
             // Enforce LRU Memory Limit
             if (this.MKSKIPPED.size > this.maxSkippedMessages) {
@@ -467,7 +478,7 @@ class PQDoubleRatchetSession internal constructor(
     }
 
     private fun trySkippedMessageKeys(header: PQRatchetHeader, ciphertext: ByteArray, associatedData: ByteArray): ByteArray? {
-        val key = RatchetUtils.toHex(header.dh) + header.n
+        val key = RatchetUtils.toHex(header.dh.encryptionKey) + header.n
         val mk = MKSKIPPED[key] ?: return null
         
         val ad = associatedData + header.serialize()

@@ -44,6 +44,12 @@ Write once, encrypt everywhere. Even in a post-quantum world.
 
 ## 📝 Release Notes
 
+### v1.0.0-beta-2
+*   **Signature Bug Fix:** Resolved a critical issue where both classical and hybrid PQC signatures failed verification when using the default public key.
+*   **Unified Public Keys:** Updated both `KodiumPublicKey` and `KodiumPqcPublicKey` to include encryption and signing keys, simplifying key management and ensuring consistent behavior.
+*   **Raw Cryptographic API:** Restored and expanded raw `ByteArray` methods for signing and verification (`signDetached`, `verifyDetached`) across all namespaces.
+*   **Improved Serialization:** Enhanced serialization for all keys and sessions to maintain cross-platform consistency and support the unified public key structure.
+
 ### v1.0.0-beta-1
 *   **Security & Compatibility Fix:** Fixed a critical bug in the internal SHA-512 implementation that caused Ed25519 detached signatures to fail verification against external systems (e.g., standard JWT validators). Kodium signatures are now fully standard and cross-compatible.
 *   **Optimization:** Replaced manual SHA-512 and secure random byte generation logic with optimized calls to the `kotlincrypto` library for improved performance and stability.
@@ -246,7 +252,7 @@ val signatureB58 = Kodium.signDetachedToEncodedString(myPrivateKey, message).get
 
 // Verify using the signer's Public Key
 val isValid = Kodium.verifyDetachedFromEncodedString(
-    theirPublicKey = myPrivateKey.getSignPublicKey(), 
+    theirPublicKey = myPrivateKey.getPublicKey(), 
     data = message, 
     signatureB58 = signatureB58
 )
@@ -258,11 +264,8 @@ Easily store keys using Base58Check encoding.
 ```kotlin
 val keyPair = Kodium.generateKeyPair()
 
-// Export Public Key (Safe to share)
+// Export Public Key (Safe to share, contains both encryption and signing keys)
 val pubKeyString = keyPair.getPublicKey().exportToEncodedString()
-
-// Export Signing Public Key (Safe to share, needed for signature verification)
-val signPubKeyString = keyPair.getSignPublicKey().exportToEncodedString()
 
 // Export Private Key (Encrypted with a password)
 val privKeyString = keyPair.exportToEncryptedString("StrongPassword")
