@@ -1,20 +1,20 @@
-# Base58 & KDF
+# Base64 & KDF
 
-## Base58 Encoding
+## Base64 Encoding
 
-Kodium provides efficient Base58 and Base58Check extensions for `ByteArray` and `String`. Base58 is superior to Base64 for many crypto use cases as it eliminates ambiguous characters (`0`, `O`, `I`, `l`) and is more compact than hexadecimal representation.
+Kodium provides efficient Base64 and Base64Check extensions for `ByteArray` and `String`. Base64 is superior to Base64 for many crypto use cases as it eliminates ambiguous characters (`0`, `O`, `I`, `l`) and is more compact than hexadecimal representation.
 
 ```kotlin
 val data = "Kodium Pure Kotlin".encodeToByteArray()
 
-// Standard Base58
-val b58 = data.encodeToBase58String()
-val decoded = b58.decodeBase58()
+// Standard Base64
+val base64 = data.encodeToBase64String()
+val decoded = base64.decodeBase64()
 
-// Base58 with Checksum (Standard in Bitcoin and many crypto networks)
+// Base64 with Checksum (Standard in Bitcoin and many crypto networks)
 // The checksum helps prevent accidental typos when users manually enter or copy strings.
-val b58Check = data.encodeToBase58WithChecksum()
-val decodedCheck = b58Check.decodeBase58WithChecksum()
+val base64Check = data.encodeToBase64WithChecksum()
+val decodedCheck = base64Check.decodeBase64WithChecksum()
 ```
 
 ## Password-Based Key Derivation (PBKDF2)

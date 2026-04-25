@@ -2,8 +2,8 @@ package io.kodium
 
 import io.kodium.core.nacl
 import io.kodium.core.NaClLowLevel
-import io.kodium.core.encodeToBase58WithChecksum
-import io.kodium.core.decodeBase58WithChecksum
+import io.kodium.core.encodeToBase64WithChecksum
+import io.kodium.core.decodeBase64WithChecksum
 import kotlin.test.Test
 import kotlin.test.assertTrue
 import kotlin.test.assertContentEquals
@@ -67,23 +67,23 @@ class KodiumSignTest {
         // Sign
         val signatureResult = Kodium.signDetachedToEncodedString(keyPair, message)
         assertTrue(signatureResult.isSuccess, "High-level sign failed")
-        val signatureB58 = signatureResult.getOrThrow()
+        val signatureBase64 = signatureResult.getOrThrow()
         
         // Verify
-        val isValid = Kodium.verifyDetachedFromEncodedString(keyPair.getPublicKey(), message, signatureB58)
+        val isValid = Kodium.verifyDetachedFromEncodedString(keyPair.getPublicKey(), message, signatureBase64)
         assertTrue(isValid, "High-level detached signature verification failed")
         
         // Tamper test (modify message)
         val tamperedMessage = "Hello, Kodium! High Level? ".encodeToByteArray()
-        val isTamperedValid = Kodium.verifyDetachedFromEncodedString(keyPair.getPublicKey(), tamperedMessage, signatureB58)
+        val isTamperedValid = Kodium.verifyDetachedFromEncodedString(keyPair.getPublicKey(), tamperedMessage, signatureBase64)
         assertFalse(isTamperedValid, "Tampered message should fail verification")
 
         // Tamper test (modify signature string)
-        val signatureBytes = signatureB58.decodeBase58WithChecksum()
+        val signatureBytes = signatureBase64.decodeBase64WithChecksum()
         signatureBytes[0] = (signatureBytes[0].toInt() xor 1).toByte()
-        val tamperedSignatureB58 = signatureBytes.encodeToBase58WithChecksum()
+        val tamperedSignatureBase64 = signatureBytes.encodeToBase64WithChecksum()
         
-        val isTamperedSigValid = Kodium.verifyDetachedFromEncodedString(keyPair.getPublicKey(), message, tamperedSignatureB58)
+        val isTamperedSigValid = Kodium.verifyDetachedFromEncodedString(keyPair.getPublicKey(), message, tamperedSignatureBase64)
         assertFalse(isTamperedSigValid, "Tampered signature should fail verification")
     }
 
@@ -119,15 +119,15 @@ class KodiumSignTest {
         // Sign
         val signatureResult = Kodium.pqc.signDetachedToEncodedString(keyPair, message)
         assertTrue(signatureResult.isSuccess, "PQC high-level sign failed")
-        val signatureB58 = signatureResult.getOrThrow()
+        val signatureBase64 = signatureResult.getOrThrow()
         
         // Verify
-        val isValid = Kodium.pqc.verifyDetachedFromEncodedString(keyPair.getPublicKey(), message, signatureB58)
+        val isValid = Kodium.pqc.verifyDetachedFromEncodedString(keyPair.getPublicKey(), message, signatureBase64)
         assertTrue(isValid, "PQC high-level detached signature verification failed")
         
         // Tamper test (modify message)
         val tamperedMessage = "Hello, Kodium! PQC Level? ".encodeToByteArray()
-        val isTamperedValid = Kodium.pqc.verifyDetachedFromEncodedString(keyPair.getPublicKey(), tamperedMessage, signatureB58)
+        val isTamperedValid = Kodium.pqc.verifyDetachedFromEncodedString(keyPair.getPublicKey(), tamperedMessage, signatureBase64)
         assertFalse(isTamperedValid, "Tampered message should fail verification in PQC")
     }
 
@@ -144,18 +144,18 @@ class KodiumSignTest {
         val classicalKeyPair = Kodium.generateKeyPair()
         val classicalSigResult = Kodium.signDetachedToEncodedString(classicalKeyPair, largeMessage)
         assertTrue(classicalSigResult.isSuccess, "Large payload classical sign failed")
-        val classicalSigB58 = classicalSigResult.getOrThrow()
+        val classicalSigBase64 = classicalSigResult.getOrThrow()
         
-        val isClassicalValid = Kodium.verifyDetachedFromEncodedString(classicalKeyPair.getPublicKey(), largeMessage, classicalSigB58)
+        val isClassicalValid = Kodium.verifyDetachedFromEncodedString(classicalKeyPair.getPublicKey(), largeMessage, classicalSigBase64)
         assertTrue(isClassicalValid, "Large payload classical detached signature verification failed")
 
         // --- 2. Test PQC Sign & Verify ---
         val pqcKeyPair = Kodium.pqc.generateKeyPair()
         val pqcSigResult = Kodium.pqc.signDetachedToEncodedString(pqcKeyPair, largeMessage)
         assertTrue(pqcSigResult.isSuccess, "Large payload PQC sign failed")
-        val pqcSigB58 = pqcSigResult.getOrThrow()
+        val pqcSigBase64 = pqcSigResult.getOrThrow()
         
-        val isPqcValid = Kodium.pqc.verifyDetachedFromEncodedString(pqcKeyPair.getPublicKey(), largeMessage, pqcSigB58)
+        val isPqcValid = Kodium.pqc.verifyDetachedFromEncodedString(pqcKeyPair.getPublicKey(), largeMessage, pqcSigBase64)
         assertTrue(isPqcValid, "Large payload PQC detached signature verification failed")
 
         // --- 3. Tamper Test on Large Payload ---
@@ -163,10 +163,10 @@ class KodiumSignTest {
         // Flip a bit somewhere in the middle of the large payload
         tamperedMessage[2500] = (tamperedMessage[2500].toInt() xor 1).toByte()
         
-        val isClassicalTamperedValid = Kodium.verifyDetachedFromEncodedString(classicalKeyPair.getPublicKey(), tamperedMessage, classicalSigB58)
+        val isClassicalTamperedValid = Kodium.verifyDetachedFromEncodedString(classicalKeyPair.getPublicKey(), tamperedMessage, classicalSigBase64)
         assertFalse(isClassicalTamperedValid, "Large payload classical signature SHOULD FAIL when tampered")
         
-        val isPqcTamperedValid = Kodium.pqc.verifyDetachedFromEncodedString(pqcKeyPair.getPublicKey(), tamperedMessage, pqcSigB58)
+        val isPqcTamperedValid = Kodium.pqc.verifyDetachedFromEncodedString(pqcKeyPair.getPublicKey(), tamperedMessage, pqcSigBase64)
         assertFalse(isPqcTamperedValid, "Large payload PQC signature SHOULD FAIL when tampered")
     }
 }

@@ -77,7 +77,7 @@ android {
 
 mavenPublishing {
     publishToMavenCentral()
-    coordinates("eu.livotov.labs", "kodium", "1.0.0-beta-2")
+    coordinates("eu.livotov.labs", "kodium", "1.0.0-beta-3")
 
     pom {
         name = "Kodium"

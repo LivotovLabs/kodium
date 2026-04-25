@@ -32,5 +32,5 @@ Responder's public bundle for X3DH.
 | Name | Summary |
 |---|---|
 | [equals](equals.md) | [common]<br>open operator override fun [equals](equals.md)(other: [Any](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-any/index.html)?): [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-boolean/index.html) |
-| [exportToEncodedString](export-to-encoded-string.md) | [common]<br>fun [exportToEncodedString](export-to-encoded-string.md)(): &lt;Error class: unknown class&gt;&lt;[String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html)&gt;<br>Exports this PublicBundle to a Base58-encoded string with a checksum. This string can be easily transmitted over a network or stored. |
+| [exportToEncodedString](export-to-encoded-string.md) | [common]<br>fun [exportToEncodedString](export-to-encoded-string.md)(): &lt;Error class: unknown class&gt;&lt;[String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html)&gt;<br>Exports this PublicBundle to a Base64-encoded string with a checksum. This string can be easily transmitted over a network or stored. |
 | [hashCode](hash-code.md) | [common]<br>open override fun [hashCode](hash-code.md)(): [Int](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-int/index.html) |

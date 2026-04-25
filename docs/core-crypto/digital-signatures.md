@@ -10,7 +10,7 @@ Kodium uses a unified key strategy. When you generate a standard `KodiumPrivateK
 
 ## Creating a Detached Signature
 
-You can generate a detached signature directly from a `KodiumPrivateKey`. The output is automatically Base58 encoded with a checksum for easy transmission.
+You can generate a detached signature directly from a `KodiumPrivateKey`. The output is automatically Base64 encoded with a checksum for easy transmission.
 
 ```kotlin
 import io.kodium.Kodium
@@ -22,21 +22,21 @@ val message = "Hello, this is a signed message!".encodeToByteArray()
 val myPrivateKey = Kodium.generateKeyPair()
 val signatureResult = Kodium.signDetachedToEncodedString(myPrivateKey, message)
 
-val signatureBase58 = signatureResult.getOrThrow()
-println("Signature: $signatureBase58")
+val signatureBase64 = signatureResult.getOrThrow()
+println("Signature: $signatureBase64")
 ```
 
 ## Verifying a Detached Signature
 
 To verify a message, the recipient needs:
 1. The exact same message bytes.
-2. The Base58 encoded signature.
+2. The Base64 encoded signature.
 3. The sender's unified **Public Key**.
 
 ```kotlin
 import io.kodium.Kodium
 
-// ... Assume the recipient receives the message, signatureBase58, and knows the sender's public key
+// ... Assume the recipient receives the message, signatureBase64, and knows the sender's public key
 
 // 1. Obtain the sender's unified public key
 // The sender can export it via: myPrivateKey.getPublicKey().exportToEncodedString()
@@ -46,7 +46,7 @@ val theirPublicKey = myPrivateKey.getPublicKey()
 val isValid = Kodium.verifyDetachedFromEncodedString(
     theirPublicKey = theirPublicKey,
     data = message,
-    signatureB58 = signatureBase58
+    signatureBase64 = signatureBase64
 )
 
 if (isValid) {
@@ -69,13 +69,13 @@ val pqcSignatureResult = Kodium.pqc.signDetachedToEncodedString(pqcKeyPair, mess
 val isValid = Kodium.pqc.verifyDetachedFromEncodedString(
     theirPublicKey = pqcKeyPair.getPublicKey(),
     data = message,
-    signatureB58 = pqcSignatureResult.getOrThrow()
+    signatureBase64 = pqcSignatureResult.getOrThrow()
 )
 ```
 
 ## Low-Level API
 
-If you need raw, byte-level access without Base58 encoding, you can use the `nacl.Sign` wrapper directly:
+If you need raw, byte-level access without Base64 encoding, you can use the `nacl.Sign` wrapper directly:
 
 ```kotlin
 import io.kodium.core.nacl

@@ -5,8 +5,8 @@ import io.kodium.KodiumPqcPublicKey
 import io.kodium.KodiumPrivateKey
 import io.kodium.KodiumPublicKey
 import io.kodium.core.MLKEM
-import io.kodium.core.decodeBase58WithChecksum
-import io.kodium.core.encodeToBase58WithChecksum
+import io.kodium.core.decodeBase64WithChecksum
+import io.kodium.core.encodeToBase64WithChecksum
 import org.kotlincrypto.macs.hmac.sha2.HmacSHA256
 
 /**
@@ -129,9 +129,9 @@ class PQDoubleRatchetSession internal constructor(
          */
 
         /**
-         * Safely imports a previously saved PQ Double Ratchet Session from an encrypted, Base58-encoded string.
+         * Safely imports a previously saved PQ Double Ratchet Session from an encrypted, Base64-encoded string.
          *
-         * @param data The encrypted, Base58-encoded session state string.
+         * @param data The encrypted, Base64-encoded session state string.
          * @param password The secret password used to encrypt the session state during export.
          * @return A `Result` containing the restored [PQDoubleRatchetSession], or an error if decryption/parsing fails.
          */
@@ -142,9 +142,9 @@ class PQDoubleRatchetSession internal constructor(
         }
 
         /**
-         * Safely imports a previously saved PQ Double Ratchet Session from an encrypted, Base58-encoded string.
+         * Safely imports a previously saved PQ Double Ratchet Session from an encrypted, Base64-encoded string.
          *
-         * @param data The encrypted, Base58-encoded session state string.
+         * @param data The encrypted, Base64-encoded session state string.
          * @param key A precomputed 32-byte symmetric key used to encrypt the session state during export.
          * @return A `Result` containing the restored [PQDoubleRatchetSession], or an error if decryption/parsing fails.
          */
@@ -239,7 +239,7 @@ class PQDoubleRatchetSession internal constructor(
     }
 
     /**
-     * Exports the entire internal state of the current session to a securely encrypted, Base58-encoded string.
+     * Exports the entire internal state of the current session to a securely encrypted, Base64-encoded string.
      * 
      * This method is intended to be used to persist the session state to local storage (e.g., a database)
      * between application restarts. The provided password is used to encrypt the blob using Kodium's
@@ -247,7 +247,7 @@ class PQDoubleRatchetSession internal constructor(
      *
      * @param password A strong, secret password to encrypt the exported state.
      * @param keyDerivationIterations The number of PBKDF2 iterations to use.
-     * @return A `Result` containing the Base58-encoded string on success.
+     * @return A `Result` containing the Base64-encoded string on success.
      */
     fun exportToEncryptedString(password: String, keyDerivationIterations: Int = io.kodium.Kodium.PBKDF2_ITERATIONS): Result<String> {
         return try {
@@ -258,11 +258,11 @@ class PQDoubleRatchetSession internal constructor(
     }
 
     /**
-     * Exports the entire internal state of the current session to a securely encrypted, Base58-encoded string
+     * Exports the entire internal state of the current session to a securely encrypted, Base64-encoded string
      * using a precomputed symmetric key.
      * 
      * @param key A precomputed 32-byte symmetric key used to encrypt the exported state.
-     * @return A `Result` containing the Base58-encoded string on success.
+     * @return A `Result` containing the Base64-encoded string on success.
      */
     fun exportToEncryptedString(key: ByteArray): Result<String> {
         return try {
@@ -412,12 +412,12 @@ class PQDoubleRatchetSession internal constructor(
     }
 
     fun encryptToEncodedString(plaintext: ByteArray, associatedData: ByteArray = ByteArray(0)): Result<String> {
-        return encrypt(plaintext, associatedData).mapCatching { it.serialize().encodeToBase58WithChecksum() }
+        return encrypt(plaintext, associatedData).mapCatching { it.serialize().encodeToBase64WithChecksum() }
     }
 
     fun decryptFromEncodedString(data: String, associatedData: ByteArray = ByteArray(0)): Result<ByteArray> {
         return try {
-            val bytes = data.decodeBase58WithChecksum()
+            val bytes = data.decodeBase64WithChecksum()
             val msg = PQRatchetMessage.deserialize(bytes)
             decrypt(msg, associatedData)
         } catch (e: Exception) {

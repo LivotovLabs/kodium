@@ -1,8 +1,8 @@
 package io.kodium
 
 import io.kodium.core.KDF
-import io.kodium.core.decodeBase58WithChecksum
-import io.kodium.core.encodeToBase58WithChecksum
+import io.kodium.core.decodeBase64WithChecksum
+import io.kodium.core.encodeToBase64WithChecksum
 import io.kodium.core.MLKEM
 import io.kodium.core.nacl
 import io.kodium.ratchet.HKDF
@@ -10,7 +10,7 @@ import io.kodium.ratchet.HKDF
 /**
  * Kodium is a cryptographic utility object for key pair generation, encryption, and decryption.
  * It supports both asymmetric and symmetric encryption methods, allowing for secure communication
- * and data storage. Encoded data is managed using Base58 encoding with checksum for integrity verification.
+ * and data storage. Encoded data is managed using Base64 encoding with checksum for integrity verification.
  *
  * The object leverages NaCl for encryption backend and HMAC for password-based symmetric encryption.
  */
@@ -165,7 +165,7 @@ object Kodium {
         }
 
         /**
-         * Encrypts the given data using hybrid PQC and encodes the result to a Base58 string with a checksum.
+         * Encrypts the given data using hybrid PQC and encodes the result to a Base64 string with a checksum.
          *
          * **WARNING: Lack of Forward Secrecy.**
          * This method uses static keys for encryption. If either the sender's or
@@ -178,7 +178,7 @@ object Kodium {
             theirPublicKey: KodiumPqcPublicKey,
             data: ByteArray
         ): Result<String> {
-            return encrypt(mySecretKey, theirPublicKey, data).mapCatching { it.encodeToBase58WithChecksum() }
+            return encrypt(mySecretKey, theirPublicKey, data).mapCatching { it.encodeToBase64WithChecksum() }
         }
 
         /**
@@ -189,16 +189,16 @@ object Kodium {
             theirPublicKey: KodiumPqcPublicKey,
             data: String
         ): Result<ByteArray> {
-            return decrypt(mySecretKey, theirPublicKey, data.decodeBase58WithChecksum())
+            return decrypt(mySecretKey, theirPublicKey, data.decodeBase64WithChecksum())
         }
 
         /**
          * Signs data using the classical Ed25519 component of the PQC Private Key.
-         * Returns the detached signature as a Base58 encoded string.
+         * Returns the detached signature as a Base64 encoded string.
          * Note: This signature is purely classical (Ed25519) as PQC signatures (e.g. ML-DSA) are not yet integrated.
          */
         fun signDetachedToEncodedString(mySecretKey: KodiumPqcPrivateKey, data: ByteArray): Result<String> {
-            return signDetached(mySecretKey, data).mapCatching { it.encodeToBase58WithChecksum() }
+            return signDetached(mySecretKey, data).mapCatching { it.encodeToBase64WithChecksum() }
         }
 
         /**
@@ -210,11 +210,11 @@ object Kodium {
         }
 
         /**
-         * Verifies a Base58 encoded detached signature against a message using the classical Ed25519 public key.
+         * Verifies a Base64 encoded detached signature against a message using the classical Ed25519 public key.
          */
-        fun verifyDetachedFromEncodedString(theirPublicKey: KodiumPqcPublicKey, data: ByteArray, signatureB58: String): Boolean {
+        fun verifyDetachedFromEncodedString(theirPublicKey: KodiumPqcPublicKey, data: ByteArray, signatureBase64: String): Boolean {
             return try {
-                verifyDetached(theirPublicKey, data, signatureB58.decodeBase58WithChecksum())
+                verifyDetached(theirPublicKey, data, signatureBase64.decodeBase64WithChecksum())
             } catch (err: Throwable) {
                 false
             }
@@ -230,10 +230,10 @@ object Kodium {
 
     /**
      * Signs data using the Ed25519 Secret Key.
-     * Returns the detached signature as a Base58 encoded string.
+     * Returns the detached signature as a Base64 encoded string.
      */
     fun signDetachedToEncodedString(mySecretKey: KodiumPrivateKey, data: ByteArray): Result<String> {
-        return signDetached(mySecretKey, data).mapCatching { it.encodeToBase58WithChecksum() }
+        return signDetached(mySecretKey, data).mapCatching { it.encodeToBase64WithChecksum() }
     }
 
     /**
@@ -251,11 +251,11 @@ object Kodium {
     }
 
     /**
-     * Verifies a Base58 encoded detached signature against a message.
+     * Verifies a Base64 encoded detached signature against a message.
      */
-    fun verifyDetachedFromEncodedString(theirPublicKey: KodiumPublicKey, data: ByteArray, signatureB58: String): Boolean {
+    fun verifyDetachedFromEncodedString(theirPublicKey: KodiumPublicKey, data: ByteArray, signatureBase64: String): Boolean {
         return try {
-            verifyDetached(theirPublicKey, data, signatureB58.decodeBase58WithChecksum())
+            verifyDetached(theirPublicKey, data, signatureBase64.decodeBase64WithChecksum())
         } catch (err: Throwable) {
             false
         }
@@ -290,7 +290,7 @@ object Kodium {
 
     /**
      * Encrypts the given data using the sender's private key and the receiver's public key,
-     * and then encodes the encrypted data to a Base58 string with a checksum.
+     * and then encodes the encrypted data to a Base64 string with a checksum.
      *
      * **WARNING: Lack of Forward Secrecy.**
      * This method uses a static-static Diffie-Hellman key exchange. If either the sender's or
@@ -300,7 +300,7 @@ object Kodium {
      *
      * This method performs encryption by generating a combined nonce and cipher
      * from the data and keys provided, ensuring secure communication.
-     * The output is a Base58-encoded string for easy transmission and integrity verification.
+     * The output is a Base64-encoded string for easy transmission and integrity verification.
      *
      * @param mySecretKey The private key of the sender used for encryption.
      * @param theirPublicKey The public key of the receiver used for encryption.
@@ -312,7 +312,7 @@ object Kodium {
         theirPublicKey: KodiumPublicKey,
         data: ByteArray
     ): Result<String> {
-        return encrypt(mySecretKey, theirPublicKey, data).mapCatching { it.encodeToBase58WithChecksum() }
+        return encrypt(mySecretKey, theirPublicKey, data).mapCatching { it.encodeToBase64WithChecksum() }
     }
 
     /**
@@ -356,13 +356,13 @@ object Kodium {
     /**
      * Decrypts an encoded string using the recipient's private key and the sender's public key.
      *
-     * This method takes a Base58-encoded string (with checksum) representing encrypted data,
+     * This method takes a Base64-encoded string (with checksum) representing encrypted data,
      * decodes it to a byte array, and decrypts it using a combination of the receiver's private key
      * and the sender's public key.
      *
      * @param mySecretKey The private key of the recipient used for decryption.
      * @param theirPublicKey The public key of the sender used for decryption.
-     * @param data The Base58-encoded string containing the encrypted data with a checksum.
+     * @param data The Base64-encoded string containing the encrypted data with a checksum.
      * @return A `Result` object containing the decrypted data as a `ByteArray` on success,
      *         or an error on failure.
      */
@@ -371,7 +371,7 @@ object Kodium {
         theirPublicKey: KodiumPublicKey,
         data: String
     ): Result<ByteArray> {
-        return decrypt(mySecretKey, theirPublicKey, data.decodeBase58WithChecksum())
+        return decrypt(mySecretKey, theirPublicKey, data.decodeBase64WithChecksum())
     }
 
     /**
@@ -412,28 +412,28 @@ object Kodium {
     }
 
     /**
-     * Encrypts the given data using a symmetric encryption algorithm and encodes the result as a Base58 string with a checksum.
+     * Encrypts the given data using a symmetric encryption algorithm and encodes the result as a Base64 string with a checksum.
      *
      * The encryption process combines the given password and data, producing a secure encrypted output.
-     * The resulting encrypted byte array is then encoded into a Base58-encoded string with a checksum for safe storage or transmission.
+     * The resulting encrypted byte array is then encoded into a Base64-encoded string with a checksum for safe storage or transmission.
      *
      * @param password The password used for encryption. It should be a secure string that the user must remember to decrypt the data.
      * @param data The data to be encrypted, provided as a byte array.
-     * @return A `Result` object that contains the Base58-encoded string on successful encryption, or an error if the encryption fails.
+     * @return A `Result` object that contains the Base64-encoded string on successful encryption, or an error if the encryption fails.
      */
     fun encryptSymmetricToEncodedString(password: String, data: ByteArray, keyDerivationIterations: Int = PBKDF2_ITERATIONS): Result<String> {
-        return encryptSymmetric(password, data, keyDerivationIterations).mapCatching { it.encodeToBase58WithChecksum() }
+        return encryptSymmetric(password, data, keyDerivationIterations).mapCatching { it.encodeToBase64WithChecksum() }
     }
 
     /**
-     * Encrypts the given data using a symmetric encryption algorithm with a precomputed key and encodes the result as a Base58 string with a checksum.
+     * Encrypts the given data using a symmetric encryption algorithm with a precomputed key and encodes the result as a Base64 string with a checksum.
      *
      * @param key The precomputed symmetric key (must be exactly 32 bytes).
      * @param data The data to be encrypted, provided as a byte array.
-     * @return A `Result` object that contains the Base58-encoded string on successful encryption, or an error if the encryption fails.
+     * @return A `Result` object that contains the Base64-encoded string on successful encryption, or an error if the encryption fails.
      */
     fun encryptSymmetricToEncodedString(key: ByteArray, data: ByteArray): Result<String> {
-        return encryptSymmetric(key, data).mapCatching { it.encodeToBase58WithChecksum() }
+        return encryptSymmetric(key, data).mapCatching { it.encodeToBase64WithChecksum() }
     }
 
     /**
@@ -524,31 +524,31 @@ object Kodium {
     }
 
     /**
-     * Decrypts an encoded Base58 string that was encrypted using symmetric encryption.
+     * Decrypts an encoded Base64 string that was encrypted using symmetric encryption.
      *
-     * This function first decodes the input string from Base58 with checksum verification. Then,
+     * This function first decodes the input string from Base64 with checksum verification. Then,
      * it attempts to decrypt the decoded data using the provided password and the symmetric
      * decryption method. The decryption result is returned as a success or an error.
      *
      * @param password The password used to decrypt the encoded string.
-     * @param data The Base58-encoded string containing the encrypted data with a checksum.
+     * @param data The Base64-encoded string containing the encrypted data with a checksum.
      * @return A `Result` object containing the decrypted data as a `ByteArray` on success,
      *         or an error on failure.
      */
     fun decryptSymmetricFromEncodedString(password: String, data: String, keyDerivationIterations: Int = PBKDF2_ITERATIONS): Result<ByteArray> {
-        return decryptSymmetric(password, data.decodeBase58WithChecksum(), keyDerivationIterations)
+        return decryptSymmetric(password, data.decodeBase64WithChecksum(), keyDerivationIterations)
     }
 
     /**
-     * Decrypts an encoded Base58 string that was encrypted using symmetric encryption with a precomputed key.
+     * Decrypts an encoded Base64 string that was encrypted using symmetric encryption with a precomputed key.
      *
      * @param key The precomputed symmetric key (must be exactly 32 bytes).
-     * @param data The Base58-encoded string containing the encrypted data with a checksum.
+     * @param data The Base64-encoded string containing the encrypted data with a checksum.
      * @return A `Result` object containing the decrypted data as a `ByteArray` on success,
      *         or an error on failure.
      */
     fun decryptSymmetricFromEncodedString(key: ByteArray, data: String): Result<ByteArray> {
-        return decryptSymmetric(key, data.decodeBase58WithChecksum())
+        return decryptSymmetric(key, data.decodeBase64WithChecksum())
     }
 
     /**
@@ -647,28 +647,28 @@ object Kodium {
     }
 
     /**
-     * Encodes the given byte array into a Base58 string, appending a checksum at the end.
+     * Encodes the given byte array into a Base64 string, appending a checksum at the end.
      *
      * @param data The byte array to be encoded.
-     * @return A [Result] object containing the encoded Base58 string if successful, or the encountered error otherwise.
+     * @return A [Result] object containing the encoded Base64 string if successful, or the encountered error otherwise.
      */
     fun encodeArrayToString(data: ByteArray): Result<String> {
         return try {
-            Result.success(data.encodeToBase58WithChecksum())
+            Result.success(data.encodeToBase64WithChecksum())
         } catch (err: Throwable) {
             Result.failure(err)
         }
     }
 
     /**
-     * Decodes a base58 encoded string with checksum into a byte array.
+     * Decodes a base64 encoded string with checksum into a byte array.
      *
-     * @param data The base58 encoded string with checksum to be decoded.
+     * @param data The base64 encoded string with checksum to be decoded.
      * @return A [Result] containing the decoded byte array if successful, or the error if decoding fails.
      */
     fun decodeArrayFromString(data: String): Result<ByteArray> {
         return try {
-            Result.success(data.decodeBase58WithChecksum())
+            Result.success(data.decodeBase64WithChecksum())
         } catch (err: Throwable) {
             Result.failure(err)
         }
@@ -685,19 +685,19 @@ data class KodiumPublicKey(val encryptionKey: ByteArray, val signingKey: ByteArr
     companion object {
 
         /**
-         * Imports a `KodiumPublicKey` from a Base58-encoded string with a checksum.
+         * Imports a `KodiumPublicKey` from a Base64-encoded string with a checksum.
          *
-         * This method decodes the input string using Base58 encoding with checksum validation and
+         * This method decodes the input string using Base64 encoding with checksum validation and
          * attempts to construct a `KodiumPublicKey` instance from the decoded data. If the
          * input string is invalid or the checksum validation fails, the method returns a `Result`
          * containing the failure.
          *
-         * @param data A Base58-encoded string with an appended checksum, representing the public key material.
+         * @param data A Base64-encoded string with an appended checksum, representing the public key material.
          * @return A `Result` containing a successfully imported `KodiumPublicKey` or an error if the import fails.
          */
         fun importFromEncodedString(data: String): Result<KodiumPublicKey> {
             return try {
-                val material = data.decodeBase58WithChecksum()
+                val material = data.decodeBase64WithChecksum()
                 val encryption = material.copyOfRange(0, nacl.Box.PublicKeySize)
                 val signing = material.copyOfRange(nacl.Box.PublicKeySize, material.size)
                 Result.success(KodiumPublicKey(encryption, signing))
@@ -708,9 +708,9 @@ data class KodiumPublicKey(val encryptionKey: ByteArray, val signingKey: ByteArr
     }
 
     /**
-     * Exports the raw public key material to a Base58-encoded string with a checksum appended.
+     * Exports the raw public key material to a Base64-encoded string with a checksum appended.
      *
-     * This method encodes the byte array representing the public key (`material`) using Base58
+     * This method encodes the byte array representing the public key (`material`) using Base64
      * encoding and appends a checksum to ensure data integrity. The checksum is calculated
      * using a double SHA-256 hash of the original byte array, with the first four bytes of the
      * hash serving as the checksum.
@@ -718,9 +718,9 @@ data class KodiumPublicKey(val encryptionKey: ByteArray, val signingKey: ByteArr
      * The resulting string is suitable for secure storage or transmission and can subsequently
      * be imported back into a KodiumKodiumPublicKey object using `importFromEncodedString`.
      *
-     * @return A Base58-encoded string representation of the public key material with a checksum attached.
+     * @return A Base64-encoded string representation of the public key material with a checksum attached.
      */
-    fun exportToEncodedString() = (encryptionKey + signingKey).encodeToBase58WithChecksum()
+    fun exportToEncodedString() = (encryptionKey + signingKey).encodeToBase64WithChecksum()
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -775,20 +775,20 @@ class KodiumPrivateKey private constructor(
         }
 
         /**
-         * Imports a private key from an encrypted, Base58-encoded string.
+         * Imports a private key from an encrypted, Base64-encoded string.
          * A password MUST be provided.
          */
         fun importFromEncryptedString(data: String, password: String, keyDerivationIterations: Int = Kodium.PBKDF2_ITERATIONS): Result<KodiumPrivateKey> {
-            return Kodium.decryptSymmetric(password, data.decodeBase58WithChecksum(), keyDerivationIterations)
+            return Kodium.decryptSymmetric(password, data.decodeBase64WithChecksum(), keyDerivationIterations)
                 .mapCatching { rawSecretKey -> fromRaw(rawSecretKey) }
         }
 
         /**
-         * Imports a private key from an encrypted, Base58-encoded string.
+         * Imports a private key from an encrypted, Base64-encoded string.
          * A precomputed symmetric key MUST be provided.
          */
         fun importFromEncryptedString(data: String, key: ByteArray): Result<KodiumPrivateKey> {
-            return Kodium.decryptSymmetric(key, data.decodeBase58WithChecksum())
+            return Kodium.decryptSymmetric(key, data.decodeBase64WithChecksum())
                 .mapCatching { rawSecretKey -> fromRaw(rawSecretKey) }
         }
 
@@ -813,21 +813,21 @@ class KodiumPrivateKey private constructor(
     }
 
     /**
-     * Exports the private key to an encrypted, Base58-encoded string.
+     * Exports the private key to an encrypted, Base64-encoded string.
      * A password MUST be provided.
      */
     fun exportToEncryptedString(password: String, keyDerivationIterations: Int = Kodium.PBKDF2_ITERATIONS): Result<String> {
         return Kodium.encryptSymmetric(password, this.secretKey, keyDerivationIterations)
-            .mapCatching { it.encodeToBase58WithChecksum() }
+            .mapCatching { it.encodeToBase64WithChecksum() }
     }
 
     /**
-     * Exports the private key to an encrypted, Base58-encoded string.
+     * Exports the private key to an encrypted, Base64-encoded string.
      * A precomputed symmetric key MUST be provided.
      */
     fun exportToEncryptedString(key: ByteArray): Result<String> {
         return Kodium.encryptSymmetric(key, this.secretKey)
-            .mapCatching { it.encodeToBase58WithChecksum() }
+            .mapCatching { it.encodeToBase64WithChecksum() }
     }
 
     /**
@@ -862,7 +862,7 @@ data class KodiumPqcPublicKey(
     companion object {
         fun importFromEncodedString(data: String): Result<KodiumPqcPublicKey> {
             return try {
-                val material = data.decodeBase58WithChecksum()
+                val material = data.decodeBase64WithChecksum()
                 val classical = material.copyOfRange(0, nacl.Box.PublicKeySize)
                 val classicalSign = material.copyOfRange(nacl.Box.PublicKeySize, nacl.Box.PublicKeySize + nacl.Sign.PublicKeySize)
                 val pqc = material.copyOfRange(nacl.Box.PublicKeySize + nacl.Sign.PublicKeySize, material.size)
@@ -873,7 +873,7 @@ data class KodiumPqcPublicKey(
         }
     }
 
-    fun exportToEncodedString(): String = (classicalPublicKey + classicalSignPublicKey + pqcPublicKey).encodeToBase58WithChecksum()
+    fun exportToEncodedString(): String = (classicalPublicKey + classicalSignPublicKey + pqcPublicKey).encodeToBase64WithChecksum()
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -913,11 +913,11 @@ class KodiumPqcPrivateKey private constructor(
         }
 
         /**
-         * Imports a PQC private key from an encrypted, Base58-encoded string.
+         * Imports a PQC private key from an encrypted, Base64-encoded string.
          * A password MUST be provided.
          */
         fun importFromEncryptedString(data: String, password: String, keyDerivationIterations: Int = Kodium.PBKDF2_ITERATIONS): Result<KodiumPqcPrivateKey> {
-            return Kodium.decryptSymmetric(password, data.decodeBase58WithChecksum(), keyDerivationIterations).mapCatching { material ->
+            return Kodium.decryptSymmetric(password, data.decodeBase64WithChecksum(), keyDerivationIterations).mapCatching { material ->
                 val classicalSk = material.copyOfRange(0, nacl.Box.SecretKeySize)
                 val pqcSk = material.copyOfRange(nacl.Box.SecretKeySize, material.size)
 
@@ -926,11 +926,11 @@ class KodiumPqcPrivateKey private constructor(
         }
 
         /**
-         * Imports a PQC private key from an encrypted, Base58-encoded string.
+         * Imports a PQC private key from an encrypted, Base64-encoded string.
          * A precomputed symmetric key MUST be provided.
          */
         fun importFromEncryptedString(data: String, key: ByteArray): Result<KodiumPqcPrivateKey> {
-            return Kodium.decryptSymmetric(key, data.decodeBase58WithChecksum()).mapCatching { material ->
+            return Kodium.decryptSymmetric(key, data.decodeBase64WithChecksum()).mapCatching { material ->
                 val classicalSk = material.copyOfRange(0, nacl.Box.SecretKeySize)
                 val pqcSk = material.copyOfRange(nacl.Box.SecretKeySize, material.size)
 
@@ -963,21 +963,21 @@ class KodiumPqcPrivateKey private constructor(
     fun getPublicKey(): KodiumPqcPublicKey = publicKeyInstance
 
     /**
-     * Exports the PQC private key to an encrypted, Base58-encoded string.
+     * Exports the PQC private key to an encrypted, Base64-encoded string.
      * A password MUST be provided.
      */
     fun exportToEncryptedString(password: String, keyDerivationIterations: Int = Kodium.PBKDF2_ITERATIONS): Result<String> {
         return Kodium.encryptSymmetric(password, classicalSecretKey + pqcSecretKey, keyDerivationIterations)
-            .mapCatching { it.encodeToBase58WithChecksum() }
+            .mapCatching { it.encodeToBase64WithChecksum() }
     }
 
     /**
-     * Exports the PQC private key to an encrypted, Base58-encoded string.
+     * Exports the PQC private key to an encrypted, Base64-encoded string.
      * A precomputed symmetric key MUST be provided.
      */
     fun exportToEncryptedString(key: ByteArray): Result<String> {
         return Kodium.encryptSymmetric(key, classicalSecretKey + pqcSecretKey)
-            .mapCatching { it.encodeToBase58WithChecksum() }
+            .mapCatching { it.encodeToBase64WithChecksum() }
     }
 
     /**

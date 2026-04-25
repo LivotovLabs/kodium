@@ -2,8 +2,8 @@ package io.kodium.ratchet
 
 import io.kodium.KodiumPrivateKey
 import io.kodium.KodiumPublicKey
-import io.kodium.core.decodeBase58WithChecksum
-import io.kodium.core.encodeToBase58WithChecksum
+import io.kodium.core.decodeBase64WithChecksum
+import io.kodium.core.encodeToBase64WithChecksum
 
 /**
  * X3DH (Extended Triple Diffie-Hellman) Key Agreement Protocol.
@@ -24,7 +24,7 @@ object X3DH {
         val oneTimePreKey: KodiumPublicKey? = null
     ) {
         /**
-         * Exports this PublicBundle to a Base58-encoded string with a checksum.
+         * Exports this PublicBundle to a Base64-encoded string with a checksum.
          * This string can be easily transmitted over a network or stored.
          */
         fun exportToEncodedString(): Result<String> {
@@ -41,7 +41,7 @@ object X3DH {
                 } else {
                     writer.write(0.toByte())
                 }
-                Result.success(writer.toByteArray().encodeToBase58WithChecksum())
+                Result.success(writer.toByteArray().encodeToBase64WithChecksum())
             } catch (e: Exception) {
                 Result.failure(e)
             }
@@ -67,11 +67,11 @@ object X3DH {
 
         companion object {
             /**
-             * Imports a PublicBundle from a Base58-encoded string with a checksum.
+             * Imports a PublicBundle from a Base64-encoded string with a checksum.
              */
             fun importFromEncodedString(data: String): Result<PublicBundle> {
                 return try {
-                    val bytes = data.decodeBase58WithChecksum()
+                    val bytes = data.decodeBase64WithChecksum()
                     val reader = ByteReader(bytes)
                     val identityKey = KodiumPublicKey(reader.readBytes(32), reader.readBytes(32))
                     val signedPreKey = KodiumPublicKey(reader.readBytes(32), reader.readBytes(32))

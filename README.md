@@ -44,6 +44,12 @@ Write once, encrypt everywhere. Even in a post-quantum world.
 
 ## 📝 Release Notes
 
+### v1.0.0-beta-3
+*   **BREAKING CHANGE: Base58 to Base64 Migration:** Completely replaced the slow, custom Base58 encoding implementation with the high-performance, native Kotlin `kotlin.io.encoding.Base64`.
+*   **Performance Boost:** Significant reduction in encoding/decoding overhead across all platforms.
+*   **API Updates:** All `...ToEncodedString` and `...FromEncodedString` methods now use Base64 with a 4-byte checksum for integrity. Method parameters previously named `...B58` have been renamed to `...Base64` for clarity.
+*   **Native Compatibility:** Leverages platform-optimized Base64 implementations where available via Kotlin's standard library.
+
 ### v1.0.0-beta-2
 *   **Signature Bug Fix:** Resolved a critical issue where both classical and hybrid PQC signatures failed verification when using the default public key.
 *   **Unified Public Keys:** Updated both `KodiumPublicKey` and `KodiumPqcPublicKey` to include encryption and signing keys, simplifying key management and ensuring consistent behavior.
@@ -113,12 +119,12 @@ Add Kodium to your common module's dependencies.
 
 **Gradle (Kotlin DSL)**
 ```kotlin
-implementation("eu.livotov.labs:kodium:1.0.0")
+implementation("eu.livotov.labs:kodium:1.0.0-beta-3")
 ```
 
 **Gradle (Groovy)**
 ```groovy
-implementation 'eu.livotov.labs:kodium:1.0.0'
+implementation 'eu.livotov.labs:kodium:1.0.0-beta-3'
 ```
 
 **Maven**
@@ -126,7 +132,7 @@ implementation 'eu.livotov.labs:kodium:1.0.0'
 <dependency>
     <groupId>eu.livotov.labs</groupId>
     <artifactId>kodium</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.0-beta-3</version>
 </dependency>
 ```
 

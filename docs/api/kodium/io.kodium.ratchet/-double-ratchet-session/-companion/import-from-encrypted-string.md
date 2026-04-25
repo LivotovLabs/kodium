@@ -5,7 +5,7 @@
 [common]\
 fun [importFromEncryptedString](import-from-encrypted-string.md)(data: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html), password: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html), keyDerivationIterations: [Int](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-int/index.html) = io.kodium.Kodium.PBKDF2_ITERATIONS): &lt;Error class: unknown class&gt;&lt;[DoubleRatchetSession](../index.md)&gt;
 
-Safely imports a previously saved Double Ratchet Session from an encrypted, Base58-encoded string.
+Safely imports a previously saved Double Ratchet Session from an encrypted, Base64-encoded string.
 
 #### Return
 
@@ -17,5 +17,5 @@ common
 
 | | |
 |---|---|
-| data | The encrypted, Base58-encoded session state string. |
+| data | The encrypted, Base64-encoded session state string. |
 | password | The secret password used to encrypt the session state during export. |

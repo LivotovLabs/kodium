@@ -21,7 +21,7 @@ val secretData = "Launch codes: 12345".encodeToByteArray()
 // Encrypt the data using the password
 val encryptedResult = Kodium.encryptSymmetricToEncodedString(password, secretData)
 
-// The result is a Result<String> containing the Base58 encoded ciphertext
+// The result is a Result<String> containing the Base64 encoded ciphertext
 val cipherTextString = encryptedResult.getOrThrow()
 ```
 

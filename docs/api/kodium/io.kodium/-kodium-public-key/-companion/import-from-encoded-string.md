@@ -5,9 +5,9 @@
 [common]\
 fun [importFromEncodedString](import-from-encoded-string.md)(data: [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html)): &lt;Error class: unknown class&gt;&lt;[KodiumPublicKey](../index.md)&gt;
 
-Imports a `KodiumPublicKey` from a Base58-encoded string with a checksum.
+Imports a `KodiumPublicKey` from a Base64-encoded string with a checksum.
 
-This method decodes the input string using Base58 encoding with checksum validation and attempts to construct a `KodiumPublicKey` instance from the decoded data. If the input string is invalid or the checksum validation fails, the method returns a `Result` containing the failure.
+This method decodes the input string using Base64 encoding with checksum validation and attempts to construct a `KodiumPublicKey` instance from the decoded data. If the input string is invalid or the checksum validation fails, the method returns a `Result` containing the failure.
 
 #### Return
 
@@ -19,4 +19,4 @@ common
 
 | | |
 |---|---|
-| data | A Base58-encoded string with an appended checksum, representing the public key material. |
+| data | A Base64-encoded string with an appended checksum, representing the public key material. |

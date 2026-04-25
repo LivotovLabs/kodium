@@ -2,8 +2,8 @@ package io.kodium.ratchet
 
 import io.kodium.KodiumPrivateKey
 import io.kodium.KodiumPublicKey
-import io.kodium.core.decodeBase58WithChecksum
-import io.kodium.core.encodeToBase58WithChecksum
+import io.kodium.core.decodeBase64WithChecksum
+import io.kodium.core.encodeToBase64WithChecksum
 import org.kotlincrypto.macs.hmac.sha2.HmacSHA256
 
 /**
@@ -223,9 +223,9 @@ class DoubleRatchetSession private constructor(
         }
 
         /**
-         * Safely imports a previously saved Double Ratchet Session from an encrypted, Base58-encoded string.
+         * Safely imports a previously saved Double Ratchet Session from an encrypted, Base64-encoded string.
          *
-         * @param data The encrypted, Base58-encoded session state string.
+         * @param data The encrypted, Base64-encoded session state string.
          * @param password The secret password used to encrypt the session state during export.
          * @return A `Result` containing the restored [DoubleRatchetSession], or an error if decryption/parsing fails.
          */
@@ -236,9 +236,9 @@ class DoubleRatchetSession private constructor(
         }
 
         /**
-         * Safely imports a previously saved Double Ratchet Session from an encrypted, Base58-encoded string.
+         * Safely imports a previously saved Double Ratchet Session from an encrypted, Base64-encoded string.
          *
-         * @param data The encrypted, Base58-encoded session state string.
+         * @param data The encrypted, Base64-encoded session state string.
          * @param key A precomputed 32-byte symmetric key used to encrypt the session state during export.
          * @return A `Result` containing the restored [DoubleRatchetSession], or an error if decryption/parsing fails.
          */
@@ -316,14 +316,14 @@ class DoubleRatchetSession private constructor(
     }
 
     /**
-     * Exports the entire internal state of the current session to a securely encrypted, Base58-encoded string.
+     * Exports the entire internal state of the current session to a securely encrypted, Base64-encoded string.
      * 
      * This method is intended to be used to persist the session state to local storage (e.g., a database)
      * between application restarts. The provided password is used to encrypt the blob using Kodium's
      * symmetric encryption layer (XSalsa20 + Poly1305 via PBKDF2).
      *
      * @param password A strong, secret password to encrypt the exported state.
-     * @return A `Result` containing the Base58-encoded string on success.
+     * @return A `Result` containing the Base64-encoded string on success.
      */
     fun exportToEncryptedString(password: String, keyDerivationIterations: Int = io.kodium.Kodium.PBKDF2_ITERATIONS): Result<String> {
         return try {
@@ -334,11 +334,11 @@ class DoubleRatchetSession private constructor(
     }
 
     /**
-     * Exports the entire internal state of the current session to a securely encrypted, Base58-encoded string
+     * Exports the entire internal state of the current session to a securely encrypted, Base64-encoded string
      * using a precomputed symmetric key.
      * 
      * @param key A precomputed 32-byte symmetric key used to encrypt the exported state.
-     * @return A `Result` containing the Base58-encoded string on success.
+     * @return A `Result` containing the Base64-encoded string on success.
      */
     fun exportToEncryptedString(key: ByteArray): Result<String> {
         return try {
@@ -488,27 +488,27 @@ class DoubleRatchetSession private constructor(
 
     /**
      * A convenience wrapper around [encrypt] that serializes the resulting message into a secure,
-     * checksummed Base58 string suitable for immediate network transmission or storage.
+     * checksummed Base64 string suitable for immediate network transmission or storage.
      *
      * @param plaintext The raw byte array message to encrypt.
      * @param associatedData Optional Associated Data to authenticate.
-     * @return A `Result` containing the Base58-encoded string representation of the encrypted message.
+     * @return A `Result` containing the Base64-encoded string representation of the encrypted message.
      */
     fun encryptToEncodedString(plaintext: ByteArray, associatedData: ByteArray = ByteArray(0)): Result<String> {
-        return encrypt(plaintext, associatedData).mapCatching { it.serialize().encodeToBase58WithChecksum() }
+        return encrypt(plaintext, associatedData).mapCatching { it.serialize().encodeToBase64WithChecksum() }
     }
 
     /**
-     * A convenience wrapper around [decrypt] that accepts a secure, checksummed Base58 string
+     * A convenience wrapper around [decrypt] that accepts a secure, checksummed Base64 string
      * representing the encrypted message (as produced by [encryptToEncodedString]).
      *
-     * @param data The Base58-encoded encrypted string.
+     * @param data The Base64-encoded encrypted string.
      * @param associatedData The exact Associated Data provided by the sender during encryption.
      * @return A `Result` containing the decrypted plaintext byte array.
      */
     fun decryptFromEncodedString(data: String, associatedData: ByteArray = ByteArray(0)): Result<ByteArray> {
         return try {
-            val bytes = data.decodeBase58WithChecksum()
+            val bytes = data.decodeBase64WithChecksum()
             val msg = RatchetMessage.deserialize(bytes)
             decrypt(msg, associatedData)
         } catch (e: Exception) {
