@@ -28,7 +28,7 @@ val encryptedResult = Kodium.encryptToEncodedString(
     data = message
 )
 
-// The result is a Result<String> containing the Base58Check encoded ciphertext
+// The result is a Result<String> containing the Base64Check encoded ciphertext
 val cipherTextString = encryptedResult.getOrThrow()
 ```
 

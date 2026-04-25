@@ -33,5 +33,5 @@ Write once, encrypt everywhere. Even in a post-quantum world.
 *   **Public-Key Cryptography (Box):** Authenticated encryption using Curve25519, XSalsa20, and Poly1305.
 *   **Secret-Key Cryptography (SecretBox):** Authenticated encryption using XSalsa20 and Poly1305.
 *   **Digital Signatures:** Ed25519 high-speed, high-security signatures.
-*   **Key Management:** Secure generation, import, and export of keys (Raw & Base58Check).
-*   **Utils:** Robust Base58Check encoding/decoding and HKDF (RFC 5869).
+*   **Key Management:** Secure generation, import, and export of keys (Raw & Base64Check).
+*   **Utils:** Robust Base64Check encoding/decoding and HKDF (RFC 5869).

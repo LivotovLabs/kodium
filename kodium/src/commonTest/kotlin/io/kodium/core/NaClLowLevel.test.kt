@@ -19,8 +19,8 @@ class NaClLowLevelTest {
         val bob_pk = bobKeyPair.first
         val bob_sk = bobKeyPair.second
 
-        println("Alice SK: ${alice_sk.encodeToBase58WithChecksum()}")
-        println("Bob PK:   ${bob_pk.encodeToBase58WithChecksum()}")
+        println("Alice SK: ${alice_sk.encodeToBase64WithChecksum()}")
+        println("Bob PK:   ${bob_pk.encodeToBase64WithChecksum()}")
 
         // 2. Alice prepares a message for Bob
         val message = "This is a secret message.".encodeToByteArray()

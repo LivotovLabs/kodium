@@ -19,20 +19,20 @@ val myPublicKey = myKeyPair.getPublicKey()
 
 ## Exporting and Importing
 
-Keys can be exported to and imported from Base58-encoded strings. This is highly recommended for storing keys safely. Kodium provides built-in mechanisms to encrypt your private keys before exporting them.
+Keys can be exported to and imported from Base64-encoded strings. This is highly recommended for storing keys safely. Kodium provides built-in mechanisms to encrypt your private keys before exporting them.
 
 ### Exporting Keys
 
 ```kotlin
 // Export Public Key (Safe to share openly)
-val b58PubKey: String = myPublicKey.exportToEncodedString()
+val base64PubKey: String = myPublicKey.exportToEncodedString()
 
 // Export Private Key (Encrypted with a string password)
-val b58PrivKey: String = myKeyPair.exportToEncryptedString("your-secure-password").getOrThrow()
+val base64PrivKey: String = myKeyPair.exportToEncryptedString("your-secure-password").getOrThrow()
 
 // Export Private Key (Encrypted with a high-performance precomputed ByteArray key)
 val symmetricKey: ByteArray = Kodium.generateHighEntropyKey()
-val b58FastPrivKey: String = myKeyPair.exportToEncryptedString(symmetricKey).getOrThrow()
+val base64FastPrivKey: String = myKeyPair.exportToEncryptedString(symmetricKey).getOrThrow()
 
 // Export Raw Private Key (Unprotected - Use only if your app manages its own encryption!)
 val rawPrivKey: ByteArray = myKeyPair.exportToArray()
@@ -42,13 +42,13 @@ val rawPrivKey: ByteArray = myKeyPair.exportToArray()
 
 ```kotlin
 // Import the public key back
-val importedPubKey = KodiumPublicKey.importFromEncodedString(b58PubKey).getOrThrow()
+val importedPubKey = KodiumPublicKey.importFromEncodedString(base64PubKey).getOrThrow()
 
 // Import the private key back using a string password
-val importedPrivKey = KodiumPrivateKey.importFromEncryptedString(b58PrivKey, "your-secure-password").getOrThrow()
+val importedPrivKey = KodiumPrivateKey.importFromEncryptedString(base64PrivKey, "your-secure-password").getOrThrow()
 
 // Import using a precomputed key
-val importedFastPrivKey = KodiumPrivateKey.importFromEncryptedString(b58FastPrivKey, symmetricKey).getOrThrow()
+val importedFastPrivKey = KodiumPrivateKey.importFromEncryptedString(base64FastPrivKey, symmetricKey).getOrThrow()
 
 // Import from a raw, unprotected ByteArray
 val importedRawPrivKey = KodiumPrivateKey.importFromArray(rawPrivKey).getOrThrow()
@@ -56,7 +56,7 @@ val importedRawPrivKey = KodiumPrivateKey.importFromArray(rawPrivKey).getOrThrow
 
 ## Key Sizes
 
-| Key Type | Raw Size | Base58 Encoded Size |
+| Key Type | Raw Size | Base64 Encoded Size |
 | :--- | :--- | :--- |
 | **Classical Public Key** | 32 Bytes | ~44 chars |
 | **Classical Private Key** | 32 Bytes | Variable (depends on encryption overhead) |

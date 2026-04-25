@@ -1,20 +1,20 @@
-package io.kodium.core.base58
+package io.kodium.core.base64
 
-import io.kodium.core.decodeBase58
-import io.kodium.core.decodeBase58WithChecksum
-import io.kodium.core.encodeToBase58String
-import io.kodium.core.encodeToBase58WithChecksum
+import io.kodium.core.decodeBase64
+import io.kodium.core.decodeBase64WithChecksum
+import io.kodium.core.encodeToBase64String
+import io.kodium.core.encodeToBase64WithChecksum
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 
-class Base58Test {
+class Base64Test {
 
     @Test
     fun encodeDecodeTest() {
         val sample = "Hello, World!".encodeToByteArray()
-        val encoded = sample.encodeToBase58String()
-        val decoded = encoded.decodeBase58()
+        val encoded = sample.encodeToBase64String()
+        val decoded = encoded.decodeBase64()
         assertContentEquals(
             expected = sample,
             actual = decoded,
@@ -25,8 +25,8 @@ class Base58Test {
     @Test
     fun encodeDecodeWithChecksumTest() {
         val sample = "Hello, World!".encodeToByteArray()
-        val encoded = sample.encodeToBase58WithChecksum()
-        val decoded = encoded.decodeBase58WithChecksum()
+        val encoded = sample.encodeToBase64WithChecksum()
+        val decoded = encoded.decodeBase64WithChecksum()
         assertContentEquals(
             expected = sample,
             actual = decoded,
@@ -38,7 +38,7 @@ class Base58Test {
         val damagedEncodedString = encodedBytes.decodeToString()
 
         val unableToDecode = try {
-            damagedEncodedString.decodeBase58WithChecksum()
+            damagedEncodedString.decodeBase64WithChecksum()
             false
         } catch (err: Throwable) {
             true

@@ -12,7 +12,7 @@
 * [Post-Quantum Cryptography](pqc/README.md)
   * [Hybrid PQC](pqc/post-quantum-cryptography.md)
 * [Utilities](utilities/README.md)
-  * [Base58 & KDF](utilities/base58-and-kdf.md)
+  * [Base64 & KDF](utilities/base64-and-kdf.md)
 * [API Reference](api/index.md)
   * [Kodium](api/kodium/io.kodium/index.md)
   * [Kodium Core](api/kodium/io.kodium.core/index.md)

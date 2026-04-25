@@ -7,7 +7,7 @@ fun [decryptFromEncodedString](decrypt-from-encoded-string.md)(mySecretKey: [Kod
 
 Decrypts an encoded string using the recipient's private key and the sender's public key.
 
-This method takes a Base58-encoded string (with checksum) representing encrypted data, decodes it to a byte array, and decrypts it using a combination of the receiver's private key and the sender's public key.
+This method takes a Base64-encoded string (with checksum) representing encrypted data, decodes it to a byte array, and decrypts it using a combination of the receiver's private key and the sender's public key.
 
 #### Return
 
@@ -21,4 +21,4 @@ common
 |---|---|
 | mySecretKey | The private key of the recipient used for decryption. |
 | theirPublicKey | The public key of the sender used for decryption. |
-| data | The Base58-encoded string containing the encrypted data with a checksum. |
+| data | The Base64-encoded string containing the encrypted data with a checksum. |

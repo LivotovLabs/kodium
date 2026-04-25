@@ -1,9 +1,9 @@
 package io.kodium
 
-import io.kodium.core.decodeBase58
-import io.kodium.core.decodeBase58WithChecksum
-import io.kodium.core.encodeToBase58String
-import io.kodium.core.encodeToBase58WithChecksum
+import io.kodium.core.decodeBase64
+import io.kodium.core.decodeBase64WithChecksum
+import io.kodium.core.encodeToBase64String
+import io.kodium.core.encodeToBase64WithChecksum
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
@@ -86,18 +86,18 @@ class ReadmeExampleTest {
     }
 
     @Test
-    fun testBase58UtilityExample() {
+    fun testBase64UtilityExample() {
         val data = "Kodium Pure Kotlin".encodeToByteArray()
 
-        // Standard Base58
-        val b58 = data.encodeToBase58String()
-        val decoded = b58.decodeBase58()
-        assertTrue(decoded.contentEquals(data), "Base58 decode failed")
+        // Standard Base64
+        val base64 = data.encodeToBase64String()
+        val decoded = base64.decodeBase64()
+        assertTrue(decoded.contentEquals(data), "Base64 decode failed")
 
-        // Base58 with Checksum
-        val b58Check = data.encodeToBase58WithChecksum()
-        val decodedCheck = b58Check.decodeBase58WithChecksum()
-        assertTrue(decodedCheck.contentEquals(data), "Base58Check decode failed")
+        // Base64 with Checksum
+        val base64Check = data.encodeToBase64WithChecksum()
+        val decodedCheck = base64Check.decodeBase64WithChecksum()
+        assertTrue(decodedCheck.contentEquals(data), "Base64Check decode failed")
     }
 
     @Test

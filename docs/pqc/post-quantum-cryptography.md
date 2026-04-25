@@ -30,31 +30,31 @@ val myPublicKey: KodiumPqcPublicKey = myKeys.getPublicKey()
 ```
 
 ### 2. Exporting and Importing
-Keys are exported as Base58-encoded strings with checksums for easy storage.
+Keys are exported as Base64-encoded strings with checksums for easy storage.
 
 ```kotlin
 // Export Public Key (Safe to share)
-val b58Pk: String = myPublicKey.exportToEncodedString()
+val base64Pk: String = myPublicKey.exportToEncodedString()
 
 // Export Private Key (Encrypted with a string password)
-val b58Sk: String = myKeys.exportToEncryptedString("your-secure-password").getOrThrow()
+val base64Sk: String = myKeys.exportToEncryptedString("your-secure-password").getOrThrow()
 
 // Export Private Key (Encrypted with a fast, precomputed ByteArray key)
 val storageKey: ByteArray = Kodium.generateHighEntropyKey()
-val b58FastSk: String = myKeys.exportToEncryptedString(storageKey).getOrThrow()
+val base64FastSk: String = myKeys.exportToEncryptedString(storageKey).getOrThrow()
 
 // Export Raw Private Key (Unprotected - Use only if your app manages secure storage encryption!)
 val rawPrivKey: ByteArray = myKeys.exportToArray()
 
 // Import back
-val importedPk = KodiumPqcPublicKey.importFromEncodedString(b58Pk).getOrThrow()
-val importedSk = KodiumPqcPrivateKey.importFromEncryptedString(b58Sk, "your-secure-password").getOrThrow()
-val importedFastSk = KodiumPqcPrivateKey.importFromEncryptedString(b58FastSk, storageKey).getOrThrow()
+val importedPk = KodiumPqcPublicKey.importFromEncodedString(base64Pk).getOrThrow()
+val importedSk = KodiumPqcPrivateKey.importFromEncryptedString(base64Sk, "your-secure-password").getOrThrow()
+val importedFastSk = KodiumPqcPrivateKey.importFromEncryptedString(base64FastSk, storageKey).getOrThrow()
 val importedRawSk = KodiumPqcPrivateKey.importFromArray(rawPrivKey).getOrThrow()
 ```
 
 **Key Size Reference:**
-| Key Type | Raw Size (approx) | B58 Encoded Size |
+| Key Type | Raw Size (approx) | Base64 Encoded Size |
 | :--- | :--- | :--- |
 | **Classical PK** | 32 Bytes | ~44 chars |
 | **Hybrid PQC PK** | 1,216 Bytes | ~1,600 chars |
@@ -116,7 +116,7 @@ val bobBundle = PQXDH.PublicBundle(
     pqcKey = bobHybridKeys.getPublicKey()
 )
 
-// Bob encodes the bundle to a Base58 string to easily send it over the network
+// Bob encodes the bundle to a Base64 string to easily send it over the network
 val bobBundleString = bobBundle.exportToEncodedString().getOrThrow()
 
 // --- Meanwhile, on Alice's device ---
@@ -129,7 +129,7 @@ val aliceHybridKeys = Kodium.pqc.generateKeyPair()
 Alice starts a chat with Bob. Her device fetches Bob's public bundle from the server and computes the quantum-resistant shared secret.
 
 ```kotlin
-// Alice fetches Bob's Base58 encoded bundle string from the server
+// Alice fetches Bob's Base64 encoded bundle string from the server
 val fetchedBobBundleString = "..." // Fetched from server
 val fetchedBobBundle = PQXDH.PublicBundle.importFromEncodedString(fetchedBobBundleString).getOrThrow()
 

@@ -32,7 +32,7 @@ val bobBundle = X3DH.PublicBundle(
     oneTimePreKey = bobOneTimePreKey.publicKey
 )
 
-// Bob can encode the bundle to a Base58 string to easily send it over the network
+// Bob can encode the bundle to a Base64 string to easily send it over the network
 // and save it in the central database
 val bobBundleString = bobBundle.exportToEncodedString().getOrThrow()
 
@@ -48,7 +48,7 @@ val aliceEphemeralKey = KodiumPrivateKey.generate() // Generated specifically wh
 Alice decides to get to know Bob. She gets his username, decides to add him to her contact list, and starts a chat. Her device fetches Bob's public bundle from the server and computes the shared secret.
 
 ```kotlin
-// Alice fetches Bob's Base58 encoded bundle string from the server and parses it
+// Alice fetches Bob's Base64 encoded bundle string from the server and parses it
 val fetchedBobBundleString = "..." // Fetched from the server
 val fetchedBobBundle = X3DH.PublicBundle.importFromEncodedString(fetchedBobBundleString).getOrThrow()
 
@@ -190,7 +190,7 @@ val session = DoubleRatchetSession.initializeAsInitiator(
 
 Since a Double Ratchet session manages several moving pieces (ratchet keys, chains, and out-of-order message keys), you will need to store its state securely between app restarts.
 
-Kodium's `DoubleRatchetSession` offers simple APIs to export and import the entire session state as a securely encrypted, Base58-encoded string.
+Kodium's `DoubleRatchetSession` offers simple APIs to export and import the entire session state as a securely encrypted, Base64-encoded string.
 
 ```kotlin
 // A strong password derived from user credentials or the system Keystore/Keychain
