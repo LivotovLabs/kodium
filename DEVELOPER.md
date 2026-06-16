@@ -81,6 +81,33 @@ To update the documentation for publication:
 
 ---
 
+## Publishing to Maven Central
+
+Kodium is published to Maven Central using the `com.vanniktech.maven.publish` plugin.
+
+### Prerequisites for Publishing
+
+To publish a new version, you need to provide the following properties in your `local.properties` file or as environment variables:
+
+- `mavenCentralUsername`: Your Sonatype OSSRH username.
+- `mavenCentralPassword`: Your Sonatype OSSRH password or token.
+- `signing.keyId`: The last 8 characters of your GPG key ID.
+- `signing.password`: Your GPG key passphrase.
+- `signing.key`: Your ASCII-armored GPG private key (or use `signing.secretKeyRingFile` pointing to your `.gpg` file).
+
+### Publication Steps
+
+1.  **Update Version:** Ensure the version in `kodium/build.gradle.kts` (within the `mavenPublishing` block) is correct and does not end with `-SNAPSHOT` for a final release.
+2.  **Run Publication Task:**
+    ```bash
+    ./gradlew publishAllPublicationsToMavenCentralRepository
+    ```
+    *Note: If you encounter "Configuration cache problems", ensure `org.gradle.configuration-cache=false` is set in your `gradle.properties` or run with the `--no-configuration-cache` flag. This is a known incompatibility between Dokka and the current Gradle configuration cache implementation.*
+
+3.  **Release on Sonatype:** Log in to the [Sonatype OSSRH dashboard](https://oss.sonatype.org/) (or the new [central.sonatype.com](https://central.sonatype.com/) if using the new portal) to close and release the staging repository.
+
+---
+
 ## Code Style & Standards
 
 - **Pure Kotlin:** Do not introduce any JNI or C-interop dependencies.

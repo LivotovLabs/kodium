@@ -44,6 +44,11 @@ Write once, encrypt everywhere. Even in a post-quantum world.
 
 ## 📝 Release Notes
 
+### v1.0.0
+*   **First Stable Release:** Kodium is now officially stable and ready for production use.
+*   **Stable API:** All cryptographic primitives, Double Ratchet, and Hybrid Post-Quantum (PQC) protocols are finalized.
+*   Includes all improvements from the beta series, including the high-performance Base64 migration.
+
 ### v1.0.0-beta-3
 *   **BREAKING CHANGE: Base58 to Base64 Migration:** Completely replaced the slow, custom Base58 encoding implementation with the high-performance, native Kotlin `kotlin.io.encoding.Base64`.
 *   **Performance Boost:** Significant reduction in encoding/decoding overhead across all platforms.
@@ -119,12 +124,12 @@ Add Kodium to your common module's dependencies.
 
 **Gradle (Kotlin DSL)**
 ```kotlin
-implementation("eu.livotov.labs:kodium:1.0.0-beta-3")
+implementation("eu.livotov.labs:kodium:1.0.0")
 ```
 
 **Gradle (Groovy)**
 ```groovy
-implementation 'eu.livotov.labs:kodium:1.0.0-beta-3'
+implementation 'eu.livotov.labs:kodium:1.0.0'
 ```
 
 **Maven**
@@ -132,7 +137,7 @@ implementation 'eu.livotov.labs:kodium:1.0.0-beta-3'
 <dependency>
     <groupId>eu.livotov.labs</groupId>
     <artifactId>kodium</artifactId>
-    <version>1.0.0-beta-3</version>
+    <version>1.0.0</version>
 </dependency>
 ```
 
