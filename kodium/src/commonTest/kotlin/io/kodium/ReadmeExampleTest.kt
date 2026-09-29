@@ -101,6 +101,23 @@ class ReadmeExampleTest {
     }
 
     @Test
+    fun testSeededKeysAndMnemonicsExample() {
+        // Create: 32 random bytes -> key pair + 24 words to write down
+        val entropy = Kodium.generateHighEntropyKey()
+        val paperKey = Kodium.pqc.generateKeyPair(entropy)
+        val words = io.kodium.mnemonic.Bip39.encode(entropy)
+        assertTrue(words.size == 24, "Expected 24 words")
+
+        // Restore on a new device: words -> the very same key pair
+        val typedWords = words.joinToString(" ")
+        val restored = io.kodium.mnemonic.Bip39.decode(typedWords) ?: error("A word is misspelled or out of order")
+        val sameKey = Kodium.pqc.generateKeyPair(restored)
+
+        assertTrue(paperKey == sameKey, "Restored key must equal the paper key")
+        assertTrue(paperKey.getPublicKey() == sameKey.getPublicKey(), "Restored public key must match")
+    }
+
+    @Test
     fun testKdfUtilityExample() {
         val password = "UserPassword123".encodeToByteArray()
         val salt = "RandomSalt".encodeToByteArray()

@@ -8,7 +8,7 @@ Add Kodium to your common module's dependencies.
 
 **Gradle (Kotlin DSL)**
 ```kotlin
-implementation("eu.livotov.labs:kodium:1.0.0") // Use actual version number
+implementation("eu.livotov.labs:kodium:1.1.0") // Use actual version number
 ```
 
 ## First Steps

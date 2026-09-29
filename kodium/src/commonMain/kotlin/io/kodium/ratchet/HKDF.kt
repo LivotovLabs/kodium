@@ -32,7 +32,9 @@ object HKDF {
     fun extract(salt: ByteArray?, ikm: ByteArray): ByteArray {
         val actualSalt = if (salt == null || salt.isEmpty()) ByteArray(HASH_LEN) else salt
         val hmac = HmacSHA256(actualSalt)
-        return hmac.doFinal(ikm)
+        val prk = hmac.doFinal(ikm)
+        hmac.clearKey()
+        return prk
     }
 
     /**
@@ -63,13 +65,17 @@ object HKDF {
             hmac.update(t)
             hmac.update(actualInfo)
             hmac.update(byteArrayOf(blockIndex.toByte()))
-            t = hmac.doFinal()
+            val next = hmac.doFinal()
+            hmac.clearKey()
+            t.fill(0) // Derived key material: do not leave intermediate blocks behind
+            t = next
 
             val bytesToCopy = minOf(t.size, length - offset)
             t.copyInto(okm, offset, 0, bytesToCopy)
             offset += bytesToCopy
             blockIndex++
         }
+        t.fill(0)
 
         return okm
     }
