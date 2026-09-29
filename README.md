@@ -360,6 +360,8 @@ Kodium is licensed under the [Apache 2.0 License](LICENSE).
 
 The Post-Quantum ML-KEM math implementation in this project is based on the excellent [KyberKotlin](https://github.com/ronhombre/KyberKotlin) project by Ron Lauren Hombre.
 
+The BIP-39 English wordlist embedded in `io.kodium.mnemonic` comes from [BIP 39](https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki) by Marek Palatinus, Pavol Rusnak, Aaron Voisine and Sean Bowe. It is used under the MIT License; the full notice is in [`Bip39EnglishWordlist.kt`](kodium/src/commonMain/kotlin/io/kodium/mnemonic/Bip39EnglishWordlist.kt).
+
 ```text
 Copyright 2026 Livotov Labs Ltd.
 ```
