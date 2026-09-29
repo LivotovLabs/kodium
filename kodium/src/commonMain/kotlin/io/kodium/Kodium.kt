@@ -89,6 +89,36 @@ object Kodium {
         }
 
         /**
+         * Derives a hybrid post-quantum key pair deterministically from a 32-byte [seed].
+         *
+         * The same seed yields a byte-identical key, in both `exportToArray()` and
+         * `getPublicKey().exportToEncodedString()`, on every platform and in every Kodium release from
+         * 1.1.0 on. A seed kept safe, for example on paper as a [io.kodium.mnemonic.Bip39] mnemonic,
+         * therefore restores the key. The result is an ordinary [KodiumPqcPrivateKey] that every other
+         * API accepts.
+         *
+         * Derivation, version 1: `prk = HKDF-Extract` with HKDF-SHA-256 (RFC 5869), salt
+         * `"kodium-seeded-hybrid-v1"` and the seed as input keying material. Three `HKDF-Expand(prk, info, 32)`
+         * calls then give:
+         * - `"ed25519-seed"`: the classical secret, used as both the X25519 secret key and the Ed25519 seed
+         *   (a Kodium hybrid key has a single classical secret, so there is no separate X25519 label).
+         * - `"mlkem-d"` and `"mlkem-z"`: `d` and `z` of FIPS 203 `ML-KEM.KeyGen_internal` for ML-KEM-768.
+         *   The ML-KEM half is always [MlKemVariant.FIPS_203], so peers still running Kodium 1.0.0 cannot
+         *   encrypt to a seeded key, although they can verify its signatures.
+         *
+         * Keys already derived from seeds depend on version 1 never changing. A different derivation would
+         * get a new salt and a new function. The vectors in `seeded-hybrid-vectors.json` pin version 1.
+         *
+         * The seed is key material, as sensitive as the private key it produces. Nothing here keeps a copy
+         * of it, and every intermediate value is zeroed before returning.
+         *
+         * @param seed Exactly 32 bytes of high-entropy secret, e.g. from [Kodium.generateHighEntropyKey] or
+         * [io.kodium.mnemonic.Bip39.decode].
+         * @throws IllegalArgumentException when [seed] is not 32 bytes long.
+         */
+        fun generateKeyPair(seed: ByteArray): KodiumPqcPrivateKey = SeededKeyDerivation.hybridV1(seed)
+
+        /**
          * Encrypts data using a hybrid approach (X25519 + ML-KEM).
          *
          * **WARNING: Lack of Forward Secrecy.**
@@ -303,6 +333,19 @@ object Kodium {
     fun generateKeyPair(): KodiumPrivateKey {
         return KodiumPrivateKey.generate()
     }
+
+    /**
+     * Derives a classical key pair deterministically from a 32-byte [seed].
+     *
+     * The derivation is version 1: HKDF-SHA-256 (RFC 5869) with salt `"kodium-seeded-ed25519-v1"` and info
+     * `"ed25519-seed"` gives the 32-byte secret key, used as both the X25519 secret key and the Ed25519
+     * seed. The determinism promise and the sensitivity of the seed are the same as for
+     * [Kodium.pqc.generateKeyPair] with a seed.
+     *
+     * @param seed Exactly 32 bytes of high-entropy secret.
+     * @throws IllegalArgumentException when [seed] is not 32 bytes long.
+     */
+    fun generateKeyPair(seed: ByteArray): KodiumPrivateKey = SeededKeyDerivation.ed25519V1(seed)
 
     /**
      * Encrypts the given data using the sender's private key and the receiver's public key,

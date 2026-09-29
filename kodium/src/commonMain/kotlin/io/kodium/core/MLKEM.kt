@@ -44,6 +44,25 @@ object MLKEM {
     }
 
     /**
+     * FIPS 203 ML-KEM.KeyGen_internal(d, z) for ML-KEM-768, the deterministic key generation behind seeded
+     * keys. Returns the secret key; [d] and [z] are not modified, and the copies made here are zeroed.
+     */
+    internal fun secretKeyFromSeed(d: ByteArray, z: ByteArray): ByteArray {
+        val dCopy = d.copyOf()
+        val zCopy = z.copyOf()
+        try {
+            val kp = KyberKeyGenerator.generate(KyberParameter.ML_KEM_768, zCopy, dCopy, MlKemVariant.FIPS_203)
+            val secretKey = kp.decapsulationKey.fullBytes
+            kp.decapsulationKey.key.keyBytes.fill(0)
+            kp.decapsulationKey.randomSeed.fill(0)
+            return secretKey
+        } finally {
+            dCopy.fill(0)
+            zCopy.fill(0)
+        }
+    }
+
+    /**
      * Encapsulates a shared secret using the recipient's public key.
      * Uses a CSPRNG for entropy, and the [MlKemVariant] of [publicKey].
      */
