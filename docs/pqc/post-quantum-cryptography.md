@@ -59,6 +59,44 @@ val importedRawSk = KodiumPqcPrivateKey.importFromArray(rawPrivKey).getOrThrow()
 | **Classical PK** | 32 Bytes | ~44 chars |
 | **Hybrid PQC PK** | 1,216 Bytes | ~1,600 chars |
 
+### 3. ML-KEM Variants and Kodium 1.0.0 Compatibility
+
+Kodium 1.0.0 and earlier expanded ML-KEM's matrix and noise from truncated SHAKE output
+([issue #11](https://github.com/LivotovLabs/kodium/issues/11)). Those keys work between Kodium peers but are
+not FIPS 203 keys: other ML-KEM implementations cannot talk to them, and their ML-KEM half does not have
+ML-KEM's post-quantum security. The classical X25519/Ed25519 half was never affected.
+
+Since 1.1.0, every hybrid key has an `MlKemVariant`:
+
+| Variant | Produced by | Interoperates with |
+| :--- | :--- | :--- |
+| `FIPS_203` | `Kodium.pqc.generateKeyPair()` (default since 1.1.0) | Kodium 1.1.0+, BouncyCastle, any FIPS 203 implementation |
+| `LEGACY` | Kodium 1.0.0, or `Kodium.pqc.generateKeyPair(MlKemVariant.LEGACY)` | Kodium 1.0.0 and 1.1.0+ |
+
+The variant is recognised from the key material, so nothing is stored or sent with it. Encryption follows
+the recipient's key and decryption follows your own key. **Existing keys, stored ciphertexts, PQXDH bundles
+and persisted `PQDoubleRatchetSession`s from 1.0.0 keep working without any migration**, and what 1.1.0
+sends to a 1.0.0 key is exactly what 1.0.0 would have sent.
+
+The one thing 1.0.0 cannot do is encrypt to a `FIPS_203` key: the recipient ends up with a different
+ML-KEM secret, and decryption fails. In a PQ ratchet this surfaces on the *first reply* from a 1.0.0 peer,
+because each reply encapsulates to the other side's hybrid key. While any peer that must reach your keys
+may still run Kodium 1.0.0, generate those keys as `LEGACY`:
+
+```kotlin
+// During a rolling upgrade: keys that Kodium 1.0.0 peers must be able to encrypt to
+val identityKey = Kodium.pqc.generateKeyPair(MlKemVariant.LEGACY)
+
+// Once every peer runs 1.1.0 or later: find legacy keys and replace them
+if (publishedKey.mlKemVariant == MlKemVariant.LEGACY) { /* rotate */ }
+val newKey = Kodium.pqc.generateKeyPair() // FIPS_203
+```
+
+| Sender → Recipient's key | `LEGACY` key | `FIPS_203` key |
+| :--- | :---: | :---: |
+| Kodium 1.0.0 | ✅ | ❌ |
+| Kodium 1.1.0+ | ✅ | ✅ |
+
 ---
 
 ## 📦 Basic Encryption & Decryption

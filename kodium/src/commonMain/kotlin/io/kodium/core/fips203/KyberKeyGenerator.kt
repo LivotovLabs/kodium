@@ -20,6 +20,7 @@ package io.kodium.core.fips203
 
 import org.kotlincrypto.hash.sha3.SHA3_256
 import org.kotlincrypto.hash.sha3.SHA3_512
+import io.kodium.MlKemVariant
 import io.kodium.core.fips203.RandomBitGenerationException
 import io.kodium.core.fips203.RandomProvider
 import io.kodium.core.fips203.KyberMath
@@ -59,17 +60,23 @@ object KyberKeyGenerator {
      * This method is the ML-KEM.KeyGen_internal() specified in NIST FIPS 203.
      *
      * @param parameter [KyberParameter] of the keys to be generated.
-     * @param randomSeed [ByteArray]
-     * @param pkeSeed [ByteArray]
+     * @param randomSeed [ByteArray] z, the implicit-rejection seed.
+     * @param pkeSeed [ByteArray] d, the K-PKE seed. Zeroed on return.
+     * @param variant [MlKemVariant] to generate; [MlKemVariant.LEGACY] only for Kodium 1.0.0 compatibility.
      * @return [KyberKEMKeyPair] - Contains the Encapsulation and Decapsulation Key.
      * @throws IllegalStateException when the generated random seed and pke seed are empty/null.
      */
     @JvmSynthetic
-    internal fun generate(parameter: KyberParameter, randomSeed: ByteArray, pkeSeed: ByteArray): KyberKEMKeyPair {
+    internal fun generate(
+        parameter: KyberParameter,
+        randomSeed: ByteArray,
+        pkeSeed: ByteArray,
+        variant: MlKemVariant = MlKemVariant.FIPS_203
+    ): KyberKEMKeyPair {
         if(randomSeed.fold(true) { acc, it -> acc and (it == 0.toByte()) } or
             pkeSeed.fold(true) { acc, it -> acc and (it == 0.toByte()) })
             throw RandomBitGenerationException()
-        val pkeKeyPair = PKEGenerator.generate(parameter, pkeSeed)
+        val pkeKeyPair = PKEGenerator.generate(parameter, pkeSeed, variant)
 
         pkeSeed.fill(0) //Security feature
 
@@ -96,10 +103,11 @@ object KyberKeyGenerator {
          *
          * @param parameter [KyberParameter] of the keys to be generated.
          * @param byteArray Random [ByteArray] which is a seed.
+         * @param variant [MlKemVariant] selecting the XOF and PRF construction.
          * @return [KyberPKEKeyPair] - Contains the Encryption and Decryption Key.
          */
         @JvmSynthetic
-        fun generate(parameter: KyberParameter, byteArray: ByteArray): KyberPKEKeyPair {
+        fun generate(parameter: KyberParameter, byteArray: ByteArray, variant: MlKemVariant): KyberPKEKeyPair {
             val seeds = SHA3_512().apply {
                 update(byteArray)
                 update(parameter.K.toByte())
@@ -121,18 +129,18 @@ object KyberKeyGenerator {
 
             for(i in 0 until parameter.K) {
                 for(j in 0 until parameter.K)
-                    matrix[i][j] = KyberMath.sampleNTT(KyberMath.xof(nttSeed, j.toByte(), i.toByte()))
+                    matrix[i][j] = KyberMath.sampleNTT(KyberMath.xof(nttSeed, j.toByte(), i.toByte(), variant))
 
                 secretVector[i] = KyberMath.samplePolyCBD(
                     parameter.ETA1,
-                    KyberMath.prf(parameter.ETA1, cbdSeed, i.toByte())
+                    KyberMath.prf(parameter.ETA1, cbdSeed, i.toByte(), variant)
                 )
                 KyberMath.ntt(secretVector[i])
                 KyberMath.byteEncodeInto(decryptionKeyBytes, i * KyberConstants.ENCODE_SIZE, secretVector[i], 12)
 
                 noiseVector[i] = KyberMath.samplePolyCBD(
                     parameter.ETA1,
-                    KyberMath.prf(parameter.ETA1, cbdSeed, (i + parameter.K).toByte())
+                    KyberMath.prf(parameter.ETA1, cbdSeed, (i + parameter.K).toByte(), variant)
                 )
                 KyberMath.ntt(noiseVector[i])
             }

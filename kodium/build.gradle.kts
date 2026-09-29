@@ -53,6 +53,11 @@ kotlin {
             implementation(libs.kotlinx.coroutines.test)
         }
 
+        // Independent ML-KEM implementation for interoperability tests only; never part of the library.
+        jvmTest.dependencies {
+            implementation(libs.bouncycastle.bcprov)
+        }
+
     }
 
     //https://kotlinlang.org/docs/native-objc-interop.html#export-of-kdoc-comments-to-generated-objective-c-headers

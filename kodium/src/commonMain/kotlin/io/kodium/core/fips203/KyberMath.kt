@@ -18,22 +18,54 @@
 
 package io.kodium.core.fips203
 
+import org.kotlincrypto.core.xof.Xof
 import org.kotlincrypto.hash.sha3.SHAKE128
 import org.kotlincrypto.hash.sha3.SHAKE256
+import io.kodium.MlKemVariant
 import io.kodium.core.fips203.KyberConstants
 import kotlin.jvm.JvmSynthetic
 import kotlin.math.absoluteValue
 import kotlin.math.min
 
-internal class ByteStream(private val data: ByteArray) {
+internal interface ByteStream {
+    fun nextBytes(buffer: ByteArray)
+}
+
+/**
+ * A finite stream over a fixed buffer. Only used by the [MlKemVariant.LEGACY] XOF.
+ */
+internal class ArrayByteStream(private val data: ByteArray) : ByteStream {
     private var pos = 0
-    fun nextBytes(buffer: ByteArray) {
+    override fun nextBytes(buffer: ByteArray) {
         if (pos + buffer.size <= data.size) {
             data.copyInto(buffer, 0, pos, pos + buffer.size)
             pos += buffer.size
         } else {
             throw IllegalStateException("ByteStream ran out of data")
         }
+    }
+}
+
+/**
+ * An unbounded stream squeezed from a SHAKE128 XOF one rate-sized block at a time, as FIPS 203
+ * SampleNTT (Algorithm 7) requires.
+ */
+internal class XofByteStream(private val reader: Xof<SHAKE128>.Reader) : ByteStream {
+    private val block = ByteArray(SHAKE128_RATE)
+    private var pos = block.size
+
+    override fun nextBytes(buffer: ByteArray) {
+        for (i in buffer.indices) {
+            if (pos == block.size) {
+                reader.read(block)
+                pos = 0
+            }
+            buffer[i] = block[pos++]
+        }
+    }
+
+    private companion object {
+        const val SHAKE128_RATE = 168
     }
 }
 
@@ -244,23 +276,43 @@ internal object KyberMath {
         return multipliedNtt
     }
 
+    /**
+     * XOF(ρ, j, i) of FIPS 203: SHAKE128 absorbing the seed and two indices, squeezed as an unbounded stream.
+     *
+     * [MlKemVariant.LEGACY] reproduces Kodium 1.0.0, which used the fixed-length Digest face of SHAKE128:
+     * only its 32-byte digest reaches the buffer and the rest of the stream is zeros (issue #11).
+     */
     @JvmSynthetic
-    fun xof(seed: ByteArray, byte1: Byte, byte2: Byte): ByteStream {
-        val shake = SHAKE128()
-        shake.update(seed)
-        shake.update(byte1)
-        shake.update(byte2)
-        val buf = ByteArray(1024)
-        shake.digestInto(buf, 0)
-        return ByteStream(buf)
+    fun xof(seed: ByteArray, byte1: Byte, byte2: Byte, variant: MlKemVariant): ByteStream {
+        if (variant == MlKemVariant.LEGACY) {
+            val shake = SHAKE128()
+            shake.update(seed)
+            shake.update(byte1)
+            shake.update(byte2)
+            val buf = ByteArray(1024)
+            shake.digestInto(buf, 0)
+            return ArrayByteStream(buf)
+        }
+
+        val xof = SHAKE128.xOf()
+        xof.update(seed)
+        xof.update(byte1)
+        xof.update(byte2)
+        return XofByteStream(xof.reader())
     }
 
+    /**
+     * PRF_η(s, b) of FIPS 203: 64·η bytes of SHAKE256 output over the seed and one byte.
+     *
+     * [MlKemVariant.LEGACY] reproduces Kodium 1.0.0, which took only SHAKE256's default 64-byte digest
+     * and left the remaining 64·η − 64 bytes zero (issue #11).
+     */
     @JvmSynthetic
-    fun prf(eta: Int, seed: ByteArray, byte: Byte): ByteArray {
-        val shake = SHAKE256()
+    fun prf(eta: Int, seed: ByteArray, byte: Byte, variant: MlKemVariant): ByteArray {
+        val out = ByteArray((KyberConstants.N shr 2) * eta)
+        val shake = if (variant == MlKemVariant.LEGACY) SHAKE256() else SHAKE256(out.size)
         shake.update(seed)
         shake.update(byte)
-        val out = ByteArray((KyberConstants.N shr 2) * eta)
         shake.digestInto(out, 0)
         return out
     }
