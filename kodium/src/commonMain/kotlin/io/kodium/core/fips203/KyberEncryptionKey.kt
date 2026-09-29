@@ -18,6 +18,7 @@
 
 package io.kodium.core.fips203
 
+import io.kodium.MlKemVariant
 import io.kodium.core.fips203.InvalidKyberKeyException
 import io.kodium.core.fips203.UnsupportedKyberVariantException
 import io.kodium.core.fips203.KyberPKEKey
@@ -50,6 +51,12 @@ class KyberEncryptionKey internal constructor(
             if(!KyberMath.isModuloOfQ(c))
                 throw InvalidKyberKeyException("Not modulus of " + KyberConstants.Q)
     }
+
+    /**
+     * The [MlKemVariant] this key was generated with. Encapsulation to this key and decapsulation with
+     * the matching decapsulation key both follow it.
+     */
+    internal val variant: MlKemVariant by lazy { KyberVariantDetector.detect(this) }
 
     /**
      * A copy of the Encryption Key in bytes.

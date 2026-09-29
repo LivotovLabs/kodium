@@ -55,6 +55,7 @@ internal object KyberAgreement {
         //Thus, we do not need to zero fill some arrays/matrices.
         //Since randomness is derived from the plaintext, we also zero fill it.
         val parameter = encryptionKey.parameter
+        val variant = encryptionKey.variant
 
         val nttKeyVector = Array(parameter.K) { IntArray(KyberConstants.N) }
 
@@ -75,7 +76,7 @@ internal object KyberAgreement {
 
             randomnessVector[i] = KyberMath.samplePolyCBD(
                 parameter.ETA1,
-                KyberMath.prf(parameter.ETA1, randomness, i.toByte())
+                KyberMath.prf(parameter.ETA1, randomness, i.toByte(), variant)
             )
             KyberMath.ntt(randomnessVector[i])
 
@@ -83,11 +84,11 @@ internal object KyberAgreement {
 
             noiseVector[i] = KyberMath.samplePolyCBD(
                 parameter.ETA2,
-                KyberMath.prf(parameter.ETA2, randomness, (i + parameter.K).toByte())
+                KyberMath.prf(parameter.ETA2, randomness, (i + parameter.K).toByte(), variant)
             )
 
             for(j in 0 until parameter.K) {
-                matrix[i][j] = KyberMath.sampleNTT(KyberMath.xof(encryptionKey.nttSeed, j.toByte(), i.toByte()))
+                matrix[i][j] = KyberMath.sampleNTT(KyberMath.xof(encryptionKey.nttSeed, j.toByte(), i.toByte(), variant))
             }
         }
 
@@ -95,7 +96,7 @@ internal object KyberAgreement {
 
         val noiseTerm = KyberMath.samplePolyCBD(
             parameter.ETA2,
-            KyberMath.prf(parameter.ETA2, randomness, (parameter.K * 2).toByte())
+            KyberMath.prf(parameter.ETA2, randomness, (parameter.K * 2).toByte(), variant)
         )
 
         KyberMath.vectorToVectorAdd(constantTerm, noiseTerm)
